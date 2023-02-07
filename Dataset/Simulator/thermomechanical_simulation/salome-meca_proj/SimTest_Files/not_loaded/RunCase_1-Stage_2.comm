@@ -1,0 +1,9 @@
+modelmeca = AFFE_MODELE(AFFE=_F(MODELISATION='3D',
+                                PHENOMENE='MECANIQUE',
+                                TOUT='OUI'),
+                        MAILLAGE=meshthermo)
+
+projtemp = PROJ_CHAMP(MODELE_1=modelthermo,
+                      MODELE_2=modelmeca,
+                      PROJECTION='OUI',
+                      RESULTAT=resther)
