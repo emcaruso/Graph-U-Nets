@@ -29,6 +29,7 @@ class FileLoader(object):
         edges = []
         flag = True
         line_idx = 19
+        max_distance = 0
         while True:
             if flag:
                 line = lines[line_idx]
@@ -62,11 +63,13 @@ class FileLoader(object):
                 coords_v1 = next(item for item in nodes if item["id"] == edge_v1)["coords"]
                 coords_v2 = next(item for item in nodes if item["id"] == edge_v2)["coords"]
                 distance = np.sqrt(np.sum(np.power((coords_v1-coords_v2),2)))
+                max_distance = max(distance, max_distance)
                 edges.append( (edge_v1, edge_v2, distance) )
                 edges.append( (edge_v2, edge_v1, distance) ) # undirected?
 
                 line_idx += 1
 
+        edges = list(map(lambda t : (t[0],t[1],t[2]/max_distance), edges))
         return nodes, edges
 
         
@@ -150,18 +153,24 @@ class FileLoader(object):
         # next(item for item in dicts if item["name"] == "Pam")
 
                     
-    def create_graph(self, node_features, nodes, edges ):
+    def create_graph(self, node_features, edges ):
         
         graph = nx.Graph()
         graph.add_nodes_from(node_features)
+        print(edges)
+        graph.add_weighted_edges_from(edges)
 
-        # graph.add_nodes_from( [ (1, {"ao" : 1, "ae": 2}) , (2, {"ao": 0, "ae": 5}) ] )
+        return graph
+
         # print(list(graph.nodes.data()))
+        print(list(graph.edges.data()))
         
     def get_graph(self, table_path, unv_path):
 
         node_features = self.load_table(table_path)
         nodes, edges = self.load_unv(unv_path)
 
-        self.create_graph( node_features, nodes, edges )
+        graph = self.create_graph( node_features, edges )
+        return graph
+
 
