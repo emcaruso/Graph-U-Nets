@@ -23,8 +23,23 @@ loadthermal = AFFE_CHAR_THER(ECHANGE=(_F(COEF_H=15.0,
 
 resther = THER_LINEAIRE(CHAM_MATER=fieldmatthermo,
                         EXCIT=_F(CHARGE=loadthermal),
-                        MODELE=modelthermo)
+                        MODELE=modelthermo,
+                        SOLVEUR=_F(RESI_RELA=1e-06))
+
+resther = CALC_CHAMP(reuse=resther,
+                     RESULTAT=resther,
+                     THERMIQUE=('FLUX_NOEU', 'TEMP_ELGA'))
+
+table0 = POST_RELEVE_T(ACTION=_F(GROUP_NO=('Top', 'Bottom', 'External', 'Internal'),
+                                 INTITULE='asd',
+                                 NOM_CHAM='FLUX_NOEU',
+                                 OPERATION=('EXTRACTION', ),
+                                 RESULTAT=resther,
+                                 TOUT_CMP='OUI'))
 
 IMPR_RESU(FORMAT='MED',
           RESU=_F(RESULTAT=resther),
-          UNITE=2)
+          UNITE=80)
+
+IMPR_TABLE(TABLE=table0,
+           UNITE=4)

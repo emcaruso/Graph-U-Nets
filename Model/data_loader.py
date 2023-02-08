@@ -7,17 +7,6 @@ from sklearn.model_selection import StratifiedKFold
 from functools import partial
 import re
 
-class UNVLoder(object):
-    def __init__(self, args):
-        self.args = args
-
-    # def nodes_edges_2_graph(self, nodes, edges):
-
-        # for node in nodes:
-        #     # add node in graph
-
-        # for edge in edges:
-        #     # add edge in graph
 
 
 class FileLoader(object):
@@ -147,12 +136,6 @@ class FileLoader(object):
         return node_features
 
         
-        # for i,line in enumerate(lines2[1:]):
-        #     node_list_str = re.sub(' +', ' ', line.strip()).split(" ")
-
-        # next(item for item in dicts if item["name"] == "Pam")
-
-                    
     def create_graph(self, node_features, edges ):
         
         graph = nx.Graph()

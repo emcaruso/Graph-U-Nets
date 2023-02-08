@@ -1,0 +1,49 @@
+Aluminiummeca = DEFI_MATERIAU(ELAS=_F(ALPHA=1.2e-05,
+                                      E=70000.0,
+                                      NU=0.32,
+                                      RHO=2.5e-09))
+
+fieldmatmeca = AFFE_MATERIAU(AFFE=_F(MATER=(Aluminiummeca, ),
+                                     TOUT='OUI'),
+                             AFFE_VARC=_F(EVOL=projtemp,
+                                          NOM_VARC='TEMP',
+                                          TOUT='OUI',
+                                          VALE_REF=20.0),
+                             MODELE=modelmeca)
+
+loadmeca = AFFE_CHAR_MECA(FACE_IMPO=(_F(DX=0.0,
+                                        DY=0.0,
+                                        GROUP_MA=('Fix', )),
+                                     _F(DZ=0.0,
+                                        GROUP_MA=('Bottom', ))),
+                          MODELE=modelmeca,
+                          PRES_REP=())
+
+reslin = MECA_STATIQUE(CHAM_MATER=fieldmatmeca,
+                       EXCIT=_F(CHARGE=loadmeca),
+                       MODELE=modelmeca,
+                       SOLVEUR=_F(RESI_RELA=0.0001))
+
+reslin = CALC_CHAMP(reuse=reslin,
+                    CONTRAINTE=('SIGM_NOEU', 'SIGM_ELNO', 'SIGM_ELGA'),
+                    RESULTAT=reslin)
+
+table = POST_RELEVE_T(ACTION=(_F(GROUP_NO=('Top', 'Bottom', 'External', 'Internal'),
+                                 INTITULE='Displacements',
+                                 NOM_CHAM='DEPL',
+                                 NOM_CMP=('DX', 'DY', 'DZ'),
+                                 OPERATION=('EXTRACTION', ),
+                                 RESULTAT=reslin),
+                              _F(GROUP_NO=('Top', 'Bottom', 'External', 'Internal'),
+                                 INTITULE='flux',
+                                 NOM_CHAM='FLUX_NOEU',
+                                 OPERATION=('EXTRACTION', ),
+                                 RESULTAT=resther,
+                                 TOUT_CMP='OUI')))
+
+#comment: IMPR_RESU(FORMAT='MED',
+#comment:           RESU=_F(RESULTAT=reslin),
+#comment:           UNITE=2)
+
+IMPR_TABLE(TABLE=table,
+           UNITE=2)
