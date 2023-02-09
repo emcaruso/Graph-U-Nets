@@ -8,18 +8,18 @@ P mpi_nbnoeud 1
 P ncpus 1
 P nomjob RunCase_1_Stage_3
 P origine AsterStudy 0.11
-P rep_trav /tmp/emanuelecaruso-HP-Z2-Tower-G9-1-interactif_177503
+P rep_trav /tmp/manu-manu-Precision-3561-interactif_44828
 P server localhost
-P studyid 5634-0012-HP-Z2-Tower-G9-1
+P studyid 11238-0005-manu-Precision-3561
 P time_limit 1800.0
 P tpsjob 31
 P version 15.4
 A memjeveux 256.0
 A tpmax 1800.0
-F comm /home/manu/Desktop/PhD_research/Projects/ToyProblem-2nd_meeting/Dataset/Simulator/thermomechanical_simulation/simulation/RunCase_1_Stage_3.comm D  1
-F libr /home/manu/Desktop/PhD_research/Projects/ToyProblem-2nd_meeting/Dataset/Data/3d_models/med_meshes/copy_001.med D  3
-F libr /home/manu/Desktop/PhD_research/Projects/ToyProblem-2nd_meeting/Dataset/Data/3d_models/med_results/thrm_copy_001.med R  2
-F libr /home/manu/Desktop/PhD_research/Projects/ToyProblem-2nd_meeting/Dataset/Data/3d_models/med_results/meca_copy_001.med R  4
-F libr /home/manu/Desktop/PhD_research/Projects/ToyProblem-2nd_meeting/Dataset/Data/3d_models/table_results/copy_001.txt R  8
-F mess /home/manu/Desktop/PhD_research/Projects/ToyProblem-2nd_meeting/Dataset/Simulator/thermomechanical_simulation/simulation/message R  6
-R base /home/emanuelecaruso/Desktop/PhD/PhD_research/Projects/ToyProblem-2nd_meeting/Dataset/Simulator/thermomechanical_simulation/salome-meca_proj/SimTest_Files/RunCase_1/Result-Stage_3/base-stage3 R  0
+F comm /home/manu/Desktop/cj_gunet/Dataset/Simulator/thermomechanical_simulation/simulation/RunCase_1_Stage_3.comm D  1
+F libr /home/manu/Desktop/cj_gunet/Dataset/Simulator/thermomechanical_simulation/simulation/_ExportedFromSalomeObject_0_1_2_13.med D  20
+F libr /home/manu/Desktop/cj_gunet/Dataset/Simulator/thermomechanical_simulation/simulation/therm.resu.med R  3
+F libr /home/manu/Desktop/cj_gunet/Dataset/Simulator/thermomechanical_simulation/simulation/meca.resu.med R  2
+F libr /home/manu/Desktop/cj_gunet/Dataset/Simulator/thermomechanical_simulation/simulation/table.txt R  8
+F mess /home/manu/Desktop/cj_gunet/Dataset/Simulator/thermomechanical_simulation/simulation/message R  6
+R base /home/manu/Desktop/cj_gunet/Dataset/Simulator/thermomechanical_simulation/simulation/base-stage3 R  0

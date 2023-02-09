@@ -1,5 +1,5 @@
 meshthermo = LIRE_MAILLAGE(FORMAT='MED',
-                           UNITE=3)
+                           UNITE=20)
 
 modelthermo = AFFE_MODELE(AFFE=_F(MODELISATION='3D',
                                   PHENOMENE='THERMIQUE',
@@ -14,11 +14,11 @@ fieldmatthermo = AFFE_MATERIAU(AFFE=_F(MATER=(Aluminiumthermo, ),
                                MODELE=modelthermo)
 
 loadthermal = AFFE_CHAR_THER(ECHANGE=(_F(COEF_H=15.0,
-                                         GROUP_MA=('External', 'Internal'),
-                                         TEMP_EXT=190.0),
+                                         GROUP_MA=('top', ),
+                                         TEMP_EXT=500.0),
                                       _F(COEF_H=15.0,
-                                         GROUP_MA=('Top', 'Bottom'),
-                                         TEMP_EXT=200.0)),
+                                         GROUP_MA=('rings', 'bottom'),
+                                         TEMP_EXT=25.0)),
                              MODELE=modelthermo)
 
 resther = THER_LINEAIRE(CHAM_MATER=fieldmatthermo,
@@ -30,16 +30,6 @@ resther = CALC_CHAMP(reuse=resther,
                      RESULTAT=resther,
                      THERMIQUE=('FLUX_NOEU', 'TEMP_ELGA'))
 
-table0 = POST_RELEVE_T(ACTION=_F(GROUP_NO=('Top', 'Bottom', 'External', 'Internal'),
-                                 INTITULE='asd',
-                                 NOM_CHAM='FLUX_NOEU',
-                                 OPERATION=('EXTRACTION', ),
-                                 RESULTAT=resther,
-                                 TOUT_CMP='OUI'))
-
 IMPR_RESU(FORMAT='MED',
           RESU=_F(RESULTAT=resther),
-          UNITE=80)
-
-IMPR_TABLE(TABLE=table0,
-           UNITE=4)
+          UNITE=3)

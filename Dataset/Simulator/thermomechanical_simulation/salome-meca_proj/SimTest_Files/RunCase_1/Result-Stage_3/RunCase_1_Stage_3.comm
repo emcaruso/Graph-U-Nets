@@ -1,0 +1,117 @@
+DEBUT(LANG='FR')
+
+
+meshthermo = LIRE_MAILLAGE(identifier='0:1',
+                           FORMAT='MED',
+                           UNITE=20)
+
+modelthermo = AFFE_MODELE(identifier='1:1',
+                          AFFE=_F(MODELISATION='3D',
+                                  PHENOMENE='THERMIQUE',
+                                  TOUT='OUI'),
+                          MAILLAGE=meshthermo)
+
+Aluminiumthermo = DEFI_MATERIAU(identifier='2:1',
+                                THER=_F(LAMBDA=238.0,
+                                        RHO_CP=2430000.0))
+
+fieldmatthermo = AFFE_MATERIAU(identifier='3:1',
+                               AFFE=_F(MATER=(Aluminiumthermo, ),
+                                       TOUT='OUI'),
+                               MODELE=modelthermo)
+
+loadthermal = AFFE_CHAR_THER(identifier='4:1',
+                             ECHANGE=_F(COEF_H=15.0,
+                                        GROUP_MA=('top', 'rings', 'bottom'),
+                                        TEMP_EXT=25.0),
+                             FLUX_REP=_F(FLUN=1000000.0,
+                                         GROUP_MA=('patch_2', )),
+                             MODELE=modelthermo)
+
+resther = THER_LINEAIRE(identifier='5:1',
+                        CHAM_MATER=fieldmatthermo,
+                        EXCIT=_F(CHARGE=loadthermal),
+                        MODELE=modelthermo,
+                        SOLVEUR=_F(RESI_RELA=1e-06))
+
+resther = CALC_CHAMP(identifier='6:1',
+                     reuse=resther,
+                     RESULTAT=resther,
+                     THERMIQUE=('FLUX_NOEU', 'TEMP_ELGA'))
+
+IMPR_RESU(identifier='7:1',
+          FORMAT='MED',
+          RESU=_F(RESULTAT=resther),
+          UNITE=3)
+
+modelmeca = AFFE_MODELE(identifier='0:2',
+                        AFFE=_F(MODELISATION='3D',
+                                PHENOMENE='MECANIQUE',
+                                TOUT='OUI'),
+                        MAILLAGE=meshthermo)
+
+projtemp = PROJ_CHAMP(identifier='1:2',
+                      MODELE_1=modelthermo,
+                      MODELE_2=modelmeca,
+                      PROJECTION='OUI',
+                      RESULTAT=resther)
+
+Aluminiummeca = DEFI_MATERIAU(identifier='0:3',
+                              ELAS=_F(ALPHA=1.2e-05,
+                                      E=70000000000.0,
+                                      NU=0.32,
+                                      RHO=2.5e-09))
+
+fieldmatmeca = AFFE_MATERIAU(identifier='1:3',
+                             AFFE=_F(MATER=(Aluminiummeca, ),
+                                     TOUT='OUI'),
+                             AFFE_VARC=_F(EVOL=projtemp,
+                                          NOM_VARC='TEMP',
+                                          TOUT='OUI',
+                                          VALE_REF=20.0),
+                             MODELE=modelmeca)
+
+loadmeca = AFFE_CHAR_MECA(identifier='2:3',
+                          FACE_IMPO=(_F(DX=0.0,
+                                        DY=0.0,
+                                        GROUP_MA=('fix', )),
+                                     _F(DZ=0.0,
+                                        GROUP_MA=('bottom', ))),
+                          MODELE=modelmeca,
+                          PRES_REP=())
+
+reslin = MECA_STATIQUE(identifier='3:3',
+                       CHAM_MATER=fieldmatmeca,
+                       EXCIT=_F(CHARGE=loadmeca),
+                       MODELE=modelmeca,
+                       SOLVEUR=_F(RESI_RELA=0.0001))
+
+reslin = CALC_CHAMP(identifier='4:3',
+                    reuse=reslin,
+                    CONTRAINTE=('SIGM_NOEU', 'SIGM_ELNO', 'SIGM_ELGA'),
+                    RESULTAT=reslin)
+
+table = POST_RELEVE_T(identifier='5:3',
+                      ACTION=(_F(GROUP_NO=('top', 'rings', 'bottom'),
+                                 INTITULE='Displacements',
+                                 NOM_CHAM='DEPL',
+                                 NOM_CMP=('DX', 'DY', 'DZ'),
+                                 OPERATION=('EXTRACTION', ),
+                                 RESULTAT=reslin),
+                              _F(GROUP_NO=('top', 'rings', 'bottom'),
+                                 INTITULE='flux',
+                                 NOM_CHAM='FLUX_NOEU',
+                                 OPERATION=('EXTRACTION', ),
+                                 RESULTAT=resther,
+                                 TOUT_CMP='OUI')))
+
+IMPR_RESU(identifier='6:3',
+          FORMAT='MED',
+          RESU=_F(RESULTAT=reslin),
+          UNITE=2)
+
+IMPR_TABLE(identifier='7:3',
+           TABLE=table,
+           UNITE=8)
+
+FIN()
