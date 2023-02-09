@@ -8,9 +8,9 @@ P mpi_nbnoeud 1
 P ncpus 1
 P nomjob RunCase_1_Stage_3
 P origine AsterStudy 0.11
-P rep_trav /tmp/manu-manu-Precision-3561-interactif_44828
+P rep_trav /tmp/manu-manu-Precision-3561-interactif_79213
 P server localhost
-P studyid 11238-0005-manu-Precision-3561
+P studyid 11238-0006-manu-Precision-3561
 P time_limit 1800.0
 P tpsjob 31
 P version 15.4
@@ -18,8 +18,8 @@ A memjeveux 256.0
 A tpmax 1800.0
 F comm /home/manu/Desktop/cj_gunet/Dataset/Simulator/thermomechanical_simulation/simulation/RunCase_1_Stage_3.comm D  1
 F libr /home/manu/Desktop/cj_gunet/Dataset/Simulator/thermomechanical_simulation/simulation/_ExportedFromSalomeObject_0_1_2_13.med D  20
-F libr /home/manu/Desktop/cj_gunet/Dataset/Simulator/thermomechanical_simulation/simulation/therm.resu.med R  3
-F libr /home/manu/Desktop/cj_gunet/Dataset/Simulator/thermomechanical_simulation/simulation/meca.resu.med R  2
-F libr /home/manu/Desktop/cj_gunet/Dataset/Simulator/thermomechanical_simulation/simulation/table.txt R  8
+F libr /home/manu/Desktop/cj_gunet/Dataset/Data/med_results/thrm_10000patch_1.med  R  3
+F libr /home/manu/Desktop/cj_gunet/Dataset/Data/med_results/meca_10000patch_1.med  R  2
+F libr /home/manu/Desktop/cj_gunet/Dataset/Data/table_results/10000patch_1.txt R  8
 F mess /home/manu/Desktop/cj_gunet/Dataset/Simulator/thermomechanical_simulation/simulation/message R  6
 R base /home/manu/Desktop/cj_gunet/Dataset/Simulator/thermomechanical_simulation/simulation/base-stage3 R  0
