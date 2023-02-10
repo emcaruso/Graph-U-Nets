@@ -27,17 +27,30 @@ def get_args():
     args, _ = parser.parse_known_args()
     return args
 
+def get_filelist():
+
+    data_dir = os.path.realpath(os.path.dirname(__file__)+"/../Dataset/Data")
+    tables_dir = data_dir+"/table_results"
+    table_names = os.listdir(tables_dir)
+
 def main():
     args = get_args()
     print(args)
-    data_dir = os.path.realpath(os.path.dirname(__file__)+"/../Dataset/Data")
-    tables_dir = data_dir+"/3d_models/table_results/"
+    get_filelist()
     
-    file_loader = FileLoader(args)
-    # file_loader.load_table(tables_dir+"table_meca.txt")
-    # file_loader.load_unv(tables_dir+"Mesh_1.unv")
-    file_loader.get_graph(tables_dir+"table_meca.txt",tables_dir+"Mesh_1.unv" )
-    print("done")
+    # get paths
+    data_dir = os.path.realpath(os.path.dirname(__file__)+"/../Dataset/Data")
+    tables_dir = data_dir+"/table_results"
+    table_paths = os.listdir(tables_dir)
+    geometry_path = data_dir+"/geometry_cj.unv"
+
+    # for each table of the dataset ...
+    for table_path in table_paths:
+
+        # load files and get graphs
+        file_loader = FileLoader(args)
+        file_loader.get_graph(tables_dir+"/"+table_path,geometry_path )
+        print("done")
 
 if __name__ == "__main__":
     main()

@@ -9,7 +9,7 @@ P ncpus 1
 P nomjob RunCase_1_Stage_3
 P origine AsterStudy 0.11
 P server localhost
-P studyid 11238-0006-manu-Precision-3561
+P studyid 27247-0002-manu-Precision-3561
 P time_limit 1800.0
 P tpsjob 31
 P version 15.4

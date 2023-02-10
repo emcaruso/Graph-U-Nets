@@ -8,22 +8,16 @@
           2,
           3
         ],
-        "baseFolder": "RunCase_1",
         "jobInfos": {
-          "jobid": "0",
           "mode": "Interactive",
-          "name": "RunCase_1_Stage_1",
           "server": "localhost",
           "memory": 2048,
           "time": "00:30:00",
           "version": "15.4",
           "mpicpu": 1,
           "nodes": 1,
-          "startTime": "jeu. 09 f\u00e9vr. 2023 13:53:59 CET",
           "folder": "/home/manu/Desktop/cj_gunet/Dataset/Simulator/thermomechanical_simulation/salome-meca_proj/SimTest_Files",
           "wckey": "P10WB:ASTER",
-          "dumpString": "<?xml version=\"1.0\"?>\n<!--SALOME Launcher job-->\n<jobs>\n  <job type=\"command_salome\" name=\"RunCase_1_Stage_1\">\n    <user_part>\n      <job_file>/home/manu/Desktop/cj_gunet/Dataset/Simulator/thermomechanical_simulation/salome-meca_proj/SimTest_Files/RunCase_1/Result-Stage_1/launcher_script</job_file>\n      <work_directory>/tmp/salome_localres_workdir_manu/manu-manu-Precision-3561-jeu.-09-135359.724</work_directory>\n      <result_directory>/home/manu/Desktop/cj_gunet/Dataset/Simulator/thermomechanical_simulation/salome-meca_proj/SimTest_Files/RunCase_1/Result-Stage_1</result_directory>\n      <files>\n        <in_file>/home/manu/Desktop/cj_gunet/Dataset/Simulator/thermomechanical_simulation/salome-meca_proj/SimTest_Files/RunCase_1/Result-Stage_1/RunCase_1_Stage_1.comm</in_file>\n        <in_file>/home/manu/Desktop/cj_gunet/Dataset/Simulator/thermomechanical_simulation/salome-meca_proj/SimTest_Files/RunCase_1/Result-Stage_1/_ExportedFromSalomeObject_0_1_2_13.med</in_file>\n        <in_file>/home/manu/Desktop/cj_gunet/Dataset/Simulator/thermomechanical_simulation/salome-meca_proj/SimTest_Files/RunCase_1/Result-Stage_1/export</in_file>\n        <out_file>therm.resu.med</out_file>\n        <out_file>message</out_file>\n        <out_file>base-stage1</out_file>\n      </files>\n      <resource_params>\n        <name>localhost</name>\n        <nb_proc>1</nb_proc>\n        <nb_node>1</nb_node>\n      </resource_params>\n      <maximum_duration>00:30:00</maximum_duration>\n      <wckey>P10WB:ASTER</wckey>\n    </user_part>\n    <run_part>\n      <job_state>RUNNING</job_state>\n      <job_reference>0</job_reference>\n    </run_part>\n  </job>\n</jobs>\n",
-          "studyid": "6285-0001-manu-Precision-3561",
           "language": "fr",
           "execmode": "Use optimized version"
         }
@@ -52,7 +46,7 @@
     "stages": [
       {
         "name": "Stage_1",
-        "text": "meshthermo = LIRE_MAILLAGE(FORMAT='MED', UNITE=20)\n\nmodelthermo = AFFE_MODELE(AFFE=_F(MODELISATION='3D', PHENOMENE='THERMIQUE', TOUT='OUI'), MAILLAGE=meshthermo)\n\nAluminiumthermo = DEFI_MATERIAU(THER=_F(LAMBDA=238.0, RHO_CP=2.43e-06))\n\nfieldmatthermo = AFFE_MATERIAU(AFFE=_F(MATER=(Aluminiumthermo, ), TOUT='OUI'), MODELE=modelthermo)\n\nloadthermal = AFFE_CHAR_THER(ECHANGE=(_F(COEF_H=15.0, GROUP_MA=('top', ), TEMP_EXT=500.0), _F(COEF_H=15.0, GROUP_MA=('rings', 'bottom'), TEMP_EXT=25.0)), MODELE=modelthermo)\n\nresther = THER_LINEAIRE(CHAM_MATER=fieldmatthermo, EXCIT=_F(CHARGE=loadthermal), MODELE=modelthermo, SOLVEUR=_F(RESI_RELA=1e-06))\n\nresther = CALC_CHAMP(reuse=resther, RESULTAT=resther, THERMIQUE=('FLUX_NOEU', 'TEMP_ELGA'))\n\nIMPR_RESU(FORMAT='MED', RESU=_F(RESULTAT=resther), UNITE=3)",
+        "text": "meshthermo = LIRE_MAILLAGE(FORMAT='MED', UNITE=20)\n\nmodelthermo = AFFE_MODELE(AFFE=_F(MODELISATION='3D', PHENOMENE='THERMIQUE', TOUT='OUI'), MAILLAGE=meshthermo)\n\nAluminiumthermo = DEFI_MATERIAU(THER=_F(LAMBDA=238.0, RHO_CP=2430000.0))\n\nfieldmatthermo = AFFE_MATERIAU(AFFE=_F(MATER=(Aluminiumthermo, ), TOUT='OUI'), MODELE=modelthermo)\n\nloadthermal = AFFE_CHAR_THER(ECHANGE=_F(COEF_H=15.0, GROUP_MA=('top', 'rings', 'bottom'), TEMP_EXT=25.0), FLUX_REP=_F(FLUN=1000000.0, GROUP_MA=('patch_2', )), MODELE=modelthermo)\n\nresther = THER_LINEAIRE(CHAM_MATER=fieldmatthermo, EXCIT=_F(CHARGE=loadthermal), MODELE=modelthermo, SOLVEUR=_F(RESI_RELA=1e-06))\n\nresther = CALC_CHAMP(reuse=resther, RESULTAT=resther, THERMIQUE=('FLUX_NOEU', 'TEMP_ELGA'))\n\nIMPR_RESU(FORMAT='MED', RESU=_F(RESULTAT=resther), UNITE=3)",
         "files": [
           {
             "handle": 20,
@@ -66,23 +60,21 @@
           }
         ],
         "result": {
-          "resstate": 16
+          "resstate": 129
         },
-        "uid": 1,
-        "baseFolder": "Result-Stage_1"
+        "uid": 1
       },
       {
         "name": "Stage_2",
         "text": "modelmeca = AFFE_MODELE(AFFE=_F(MODELISATION='3D', PHENOMENE='MECANIQUE', TOUT='OUI'), MAILLAGE=meshthermo)\n\nprojtemp = PROJ_CHAMP(MODELE_1=modelthermo, MODELE_2=modelmeca, PROJECTION='OUI', RESULTAT=resther)",
         "result": {
-          "resstate": 16
+          "resstate": 129
         },
-        "uid": 2,
-        "baseFolder": "Result-Stage_2"
+        "uid": 2
       },
       {
         "name": "Stage_3",
-        "text": "Aluminiummeca = DEFI_MATERIAU(ELAS=_F(ALPHA=1.2e-05, E=70000.0, NU=0.32, RHO=2.5e-09))\n\nfieldmatmeca = AFFE_MATERIAU(AFFE=_F(MATER=(Aluminiummeca, ), TOUT='OUI'), AFFE_VARC=_F(EVOL=projtemp, NOM_VARC='TEMP', TOUT='OUI', VALE_REF=20.0), MODELE=modelmeca)\n\nloadmeca = AFFE_CHAR_MECA(FACE_IMPO=(_F(DX=0.0, DY=0.0, GROUP_MA=('fix', )), _F(DZ=0.0, GROUP_MA=('bottom', ))), MODELE=modelmeca, PRES_REP=())\n\nreslin = MECA_STATIQUE(CHAM_MATER=fieldmatmeca, EXCIT=_F(CHARGE=loadmeca), MODELE=modelmeca, SOLVEUR=_F(RESI_RELA=0.0001))\n\nreslin = CALC_CHAMP(reuse=reslin, CONTRAINTE=('SIGM_NOEU', 'SIGM_ELNO', 'SIGM_ELGA'), RESULTAT=reslin)\n\ntable = POST_RELEVE_T(ACTION=(_F(GROUP_NO=('top', 'rings', 'bottom'), INTITULE='Displacements', NOM_CHAM='DEPL', NOM_CMP=('DX', 'DY', 'DZ'), OPERATION=('EXTRACTION', ), RESULTAT=reslin), _F(GROUP_NO=('top', 'rings', 'bottom'), INTITULE='flux', NOM_CHAM='FLUX_NOEU', OPERATION=('EXTRACTION', ), RESULTAT=resther, TOUT_CMP='OUI')))\n\nIMPR_RESU(FORMAT='MED', RESU=_F(RESULTAT=reslin), UNITE=2)\n\nIMPR_TABLE(TABLE=table, UNITE=8)",
+        "text": "Aluminiummeca = DEFI_MATERIAU(ELAS=_F(ALPHA=1.2e-05, E=70000000000.0, NU=0.32, RHO=2.5e-09))\n\nfieldmatmeca = AFFE_MATERIAU(AFFE=_F(MATER=(Aluminiummeca, ), TOUT='OUI'), AFFE_VARC=_F(EVOL=projtemp, NOM_VARC='TEMP', TOUT='OUI', VALE_REF=20.0), MODELE=modelmeca)\n\nloadmeca = AFFE_CHAR_MECA(FACE_IMPO=(_F(DX=0.0, DY=0.0, GROUP_MA=('fix', )), _F(DZ=0.0, GROUP_MA=('bottom', ))), MODELE=modelmeca, PRES_REP=())\n\nreslin = MECA_STATIQUE(CHAM_MATER=fieldmatmeca, EXCIT=_F(CHARGE=loadmeca), MODELE=modelmeca, SOLVEUR=_F(RESI_RELA=0.0001))\n\nreslin = CALC_CHAMP(reuse=reslin, CONTRAINTE=('SIGM_NOEU', 'SIGM_ELNO', 'SIGM_ELGA'), RESULTAT=reslin)\n\ntable = POST_RELEVE_T(ACTION=(_F(GROUP_NO=('top', 'rings', 'bottom'), INTITULE='Displacements', NOM_CHAM='DEPL', NOM_CMP=('DX', 'DY', 'DZ'), OPERATION=('EXTRACTION', ), RESULTAT=reslin), _F(GROUP_NO=('top', 'rings', 'bottom'), INTITULE='flux', NOM_CHAM='FLUX_NOEU', OPERATION=('EXTRACTION', ), RESULTAT=resther, TOUT_CMP='OUI')))\n\nIMPR_RESU(FORMAT='MED', RESU=_F(RESULTAT=reslin), UNITE=2)\n\nIMPR_TABLE(TABLE=table, UNITE=8)",
         "files": [
           {
             "handle": 2,
@@ -96,10 +88,9 @@
           }
         ],
         "result": {
-          "resstate": 16
+          "resstate": 1
         },
-        "uid": 3,
-        "baseFolder": "Result-Stage_3"
+        "uid": 3
       }
     ],
     "aster": "stable",

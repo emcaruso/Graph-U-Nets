@@ -18,8 +18,8 @@ A memjeveux 256.0
 A tpmax 1800.0
 F comm /home/manu/Desktop/cj_gunet/Dataset/Simulator/thermomechanical_simulation/simulation/RunCase_1_Stage_3.comm D  1
 F libr /home/manu/Desktop/cj_gunet/Dataset/Simulator/thermomechanical_simulation/simulation/_ExportedFromSalomeObject_0_1_2_13.med D  20
-F libr /home/manu/Desktop/cj_gunet/Dataset/Data/med_results/thrm_10000patch_1.med  R  3
-F libr /home/manu/Desktop/cj_gunet/Dataset/Data/med_results/meca_10000patch_1.med  R  2
-F libr /home/manu/Desktop/cj_gunet/Dataset/Data/table_results/10000patch_1.txt R  8
+F libr /home/manu/Desktop/cj_gunet/Dataset/Data/med_results/thrm_100000patch_1.med  R  3
+F libr /home/manu/Desktop/cj_gunet/Dataset/Data/med_results/meca_100000patch_1.med  R  2
+F libr /home/manu/Desktop/cj_gunet/Dataset/Data/table_results/100000patch_1.txt R  8
 F mess /home/manu/Desktop/cj_gunet/Dataset/Simulator/thermomechanical_simulation/simulation/message R  6
 R base /home/manu/Desktop/cj_gunet/Dataset/Simulator/thermomechanical_simulation/simulation/base-stage3 R  0
