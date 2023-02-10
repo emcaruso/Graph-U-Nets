@@ -5,6 +5,7 @@ import time
 import torch
 import numpy as np
 import os
+from Model.network import GNet
 
 def get_args():
     parser = argparse.ArgumentParser(description='Args for graph predition')
@@ -43,14 +44,23 @@ def main():
     tables_dir = data_dir+"/table_results"
     table_paths = os.listdir(tables_dir)
     geometry_path = data_dir+"/geometry_cj.unv"
+    print("loading tables in ", tables_dir )
+    print("loading geometries in ", geometry_path )
+
+    file_loader = FileLoader(args) # file loader
+    graphs = file_loader.get_graphs(tables_dir, geometry_path) # graph list
+
+    
+    # print(len(graphs))
+    # degrees = torch.sum(graphs[0], 1)
+    # graphs[0] = graphs[0] / degrees
 
     # for each table of the dataset ...
     for table_path in table_paths:
 
         # load files and get graphs
-        file_loader = FileLoader(args)
-        file_loader.get_graph(tables_dir+"/"+table_path,geometry_path )
-        print("done")
+        graphs.append( file_loader.get_graph(tables_dir+"/"+table_path,geometry_path ) )
+        print( table_path + " loded")
 
 if __name__ == "__main__":
     main()

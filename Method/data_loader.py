@@ -7,6 +7,7 @@ from sklearn.model_selection import StratifiedKFold
 from functools import partial
 import re
 
+import os
 
 
 class FileLoader(object):
@@ -147,6 +148,16 @@ class FileLoader(object):
 
         graph = self.create_graph( node_features, edges)
 
+
         return graph
 
+
+    def get_graphs(self, tables_dir, unv_path):
+        graphs = []
+        for table_path in os.listdir(tables_dir):
+            graph = self.get_graph(tables_dir+"/"+table_path, unv_path)
+            graphs.append(graph)
+        return graphs
+
+    
 
