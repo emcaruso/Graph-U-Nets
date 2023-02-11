@@ -24,6 +24,8 @@ def get_args():
     parser.add_argument('-act_n', type=str, default='ELU', help='network act')
     parser.add_argument('-act_c', type=str, default='ELU', help='output act')
     # parser.add_argument('-ks', nargs='+', type=float, default='0.9 0.8 0.7')
+    parser.add_argument('-ks', nargs='+', default='0.9 0.8 0.7')
+    # parser.add_argument('-ks', nargs='+', type=float, default=0.9 0.8 0.7)
     parser.add_argument('-acc_file', type=str, default='re', help='acc file')
     args, _ = parser.parse_known_args()
     return args
@@ -44,11 +46,15 @@ def main():
     tables_dir = data_dir+"/table_results"
     table_paths = os.listdir(tables_dir)
     geometry_path = data_dir+"/geometry_cj.unv"
-    print("loading tables in ", tables_dir )
-    print("loading geometries in ", geometry_path )
+    print("tables in ", tables_dir )
+    print("geometry: ", geometry_path )
 
     file_loader = FileLoader(args) # file loader
-    graphs = file_loader.get_graphs(tables_dir, geometry_path) # graph list
+    data = file_loader.get_data(tables_dir, geometry_path) # graph list
+    for fold_idx in range(10):
+        print('start training ------> fold', fold_idx+1)
+        data.use_fold_data(fold_idx)
+        net = GNet(data.n_features_in, data.n_features_out, args)
 
     
     # print(len(graphs))
@@ -56,11 +62,6 @@ def main():
     # graphs[0] = graphs[0] / degrees
 
     # for each table of the dataset ...
-    for table_path in table_paths:
-
-        # load files and get graphs
-        graphs.append( file_loader.get_graph(tables_dir+"/"+table_path,geometry_path ) )
-        print( table_path + " loded")
 
 if __name__ == "__main__":
     main()

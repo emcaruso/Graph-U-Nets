@@ -5,14 +5,15 @@ from Model.ops import GCN, GraphUnet, Initializer, norm_g
 
 
 class GNet(nn.Module):
-    def __init__(self, in_dim, args):
+    def __init__(self, in_dim, out_dim, args):
         super(GNet, self).__init__()
         self.n_act = getattr(nn, args.act_n)()
         self.c_act = getattr(nn, args.act_c)()
-        self.s_gcn = GCN(in_dim, args.l_dim, self.n_act, args.drop_n)
+        self.i_gcn = GCN(in_dim, args.l_dim, self.n_act, args.drop_n)
         self.g_unet = GraphUnet(
             args.ks, args.l_dim, args.l_dim, args.l_dim, self.n_act,
             args.drop_n)
+        self.o_gcn = GCN(args.l_dim, in_dim, self.n_act, args.drop_n)
         # self.out_l_1 = nn.Linear(3*args.l_dim*(args.l_num+1), args.h_dim)
         # self.out_l_2 = nn.Linear(args.h_dim, n_classes)
         # self.out_drop = nn.Dropout(p=args.drop_c)
