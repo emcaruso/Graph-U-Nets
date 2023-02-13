@@ -7,6 +7,7 @@ from sklearn.model_selection import StratifiedKFold
 from functools import partial
 import re
 import os
+import random
 
 
 class FileLoader(object):
@@ -150,79 +151,84 @@ class FileLoader(object):
         graph = nx.Graph()
         graph.add_nodes_from(nodes_x)
         graph.add_weighted_edges_from(edges)
-
-        # print(list(graph.nodes.data()))
-        # print(list(graph.edges.data()))
         return graph
         
-    def get_graph(self, table_path, unv_path):
-        nodes, edges = self.load_unv(unv_path)
-        graph = get_graph( table_path, nodes, edges)
-        assert( len(nodes_x)==len(nodes) )
-        return graph
+
+    def nodes_2_feas(self, nodes):
+        feas = [ list(item[1].values()) for item in nodes]
+        return torch.tensor(feas)
+
 
     def get_graph(self, table_path, nodes, edges):
         nodes_x, nodes_y = self.load_table(table_path)
         assert( len(nodes_x)==len(nodes) )
         assert( len(nodes_y)==len(nodes) )
-        graph_x = self.create_graph( nodes_x, edges)
-        graph_y = self.create_graph( nodes_y, edges)
-        return graph_x, graph_y
 
+        feas_x = self.nodes_2_feas(nodes_x)
+        feas_y = self.nodes_2_feas(nodes_y)
+
+        graph =self.create_graph( nodes_x, edges)
+        graph.feas_x = feas_x
+        graph.feas_y = feas_y
+
+        A = torch.FloatTensor(nx.to_numpy_matrix(graph))
+        graph.A = A + torch.eye(graph.number_of_nodes())
+        return graph
 
     def get_graphs(self, tables_dir, nodes, edges):
-        graphs_x, graphs_y = [] , []
+        graphs = []
         for table_path in tqdm(os.listdir(tables_dir), desc="Loading tables", unit='graphs'):
-            # graph = self.get_graph(tables_dir+"/"+table_path, unv_path)
-            graph_x, graph_y = self.get_graph(tables_dir+"/"+table_path, nodes, edges)
-            graphs_x.append(graph_x)
-            graphs_y.append(graph_y)
-        return graphs_x, graphs_y
+            graph = self.get_graph(tables_dir+"/"+table_path, nodes, edges)
+            graphs.append(graph)
+        return graphs
 
     def get_data(self, tables_dir, unv_path):
         nodes, edges = self.load_unv(unv_path)
-        graphs_x, graphs_y = self.get_graphs(tables_dir, nodes, edges)
-        return G_data( graphs_x, graphs_y )
+        graphs = self.get_graphs(tables_dir, nodes, edges)
+        return G_data( graphs )
     
 class G_data(object):
-    def __init__(self, graphs_x, graphs_y):
-        self.graphs_x = graphs_x
-        self.graphs_y = graphs_y
+    def __init__(self, graphs):
+        self.graphs = graphs
         self.sep_data()
         self.n_nodes = self.get_n_nodes()
-        self.n_features_in = self.get_n_features(graphs_x)
-        self.n_features_out = self.get_n_features(graphs_y)
+        self.n_feas_x = self.get_n_feas_x()
+        self.n_feas_y = self.get_n_feas_y()
 
     def get_n_nodes(self):
-        n_nodes = len(self.graphs_x[0].nodes)
-        for g in self.graphs_x:
+        n_nodes = len(self.graphs[0].nodes)
+        for g in self.graphs:
             assert(len(g.nodes)==n_nodes)
         return n_nodes
 
-    def get_n_features(self, graphs):
-        n_features = len(list(graphs[0].nodes.data())[0][1])
-        for g in graphs:
-            for n in list(g.nodes.data()):
-                assert(len(n[1])==n_features)
+    def get_n_feas_x(self):
+        n_features = self.graphs[0].feas_x.size(dim=1)
+        for g in self.graphs:
+            assert(g.feas_x.size(dim=1)==n_features)
+        return n_features
+
+    def get_n_feas_y(self):
+        n_features = self.graphs[0].feas_y.size(dim=1)
+        for g in self.graphs:
+            assert(g.feas_y.size(dim=1)==n_features)
         return n_features
 
     def sep_data(self, seed=0):
         skf = StratifiedKFold(n_splits=10, shuffle=True, random_state=seed)
-        labels = [0] * len(self.graphs_x)
+        labels = [0] * len(self.graphs)
         self.idx_list = list(skf.split(np.zeros(len(labels)), labels))
 
     def use_fold_data(self, fold_idx):
         self.fold_idx = fold_idx+1
         train_idx, test_idx = self.idx_list[fold_idx]
-        self.train_gs = [self.graphs_x[i] for i in train_idx]
-        self.test_gs = [self.graphs_x[i] for i in test_idx]
+        self.train_gs = [ self.graphs[i] for i in train_idx]
+        self.test_gs =  [ self.graphs[i] for i in test_idx]
 
 class GraphData(object):
 
-    def __init__(self, data, feat_dim):
+    def __init__(self, data):
         super(GraphData, self).__init__()
         self.data = data
-        self.feat_dim = feat_dim
         self.idx = list(range(len(data)))
         self.pos = 0
 
@@ -236,7 +242,7 @@ class GraphData(object):
 
     def __getitem__(self, idx):
         g = self.data[idx]
-        return g.A, g.feas.float(), g.label
+        return g.A, g.feas_x.float(), g.feas_y.float()
 
     def __iter__(self):
         return self
@@ -249,8 +255,8 @@ class GraphData(object):
         cur_idx = self.idx[self.pos: self.pos+self.batch]
         data = [self.__getitem__(idx) for idx in cur_idx]
         self.pos += len(cur_idx)
-        gs, hs, labels = map(list, zip(*data))
-        return len(gs), gs, hs, torch.LongTensor(labels)
+        gs, xs, ys = map(list, zip(*data))
+        return len(gs), gs, xs, ys
 
     def loader(self, batch, shuffle, *args):
         self.batch = batch

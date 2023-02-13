@@ -1,6 +1,6 @@
 #
 #--------------------------------------------------------------------------------
-##ASTER 15.04.00 CONCEPT 0000001d CALCULE LE 10/02/2023 A 11:50:11 DE TYPE        
+##ASTER 15.04.00 CONCEPT 0000001d CALCULE LE 11/02/2023 A 16:50:23 DE TYPE        
 #TABLE_SDASTER                                                                   
 INTITULE         NOEUD    RESU     NOM_CHAM         NUME_ORDRE   INST         ABSC_CURV    COOR_X       COOR_Y       COOR_Z       DX           DY           DZ           FLUX         FLUY         FLUZ        
 Displacements    N1       00000013 DEPL                        1  0.00000E+00  0.00000E+00 -1.36083E-01  4.48604E-01  7.50000E-01 -3.15029E-03  1.52655E-03  1.87889E-03 -            -            -           

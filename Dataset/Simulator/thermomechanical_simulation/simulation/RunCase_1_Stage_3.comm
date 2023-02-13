@@ -24,8 +24,8 @@ loadthermal = AFFE_CHAR_THER(identifier='4:1',
                              ECHANGE=_F(COEF_H=15.0,
                                         GROUP_MA=('top', 'rings', 'bottom'),
                                         TEMP_EXT=25.0),
-                             FLUX_REP=_F(FLUN=100000.0,
-                                         GROUP_MA=('patch_1', )),
+                             FLUX_REP=_F(FLUN=1000000.0,
+                                         GROUP_MA=('patch_8', )),
                              MODELE=modelthermo)
 
 resther = THER_LINEAIRE(identifier='5:1',

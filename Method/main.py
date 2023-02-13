@@ -6,6 +6,7 @@ import torch
 import numpy as np
 import os
 from Model.network import GNet
+from Model.trainer import Trainer
 
 def get_args():
     parser = argparse.ArgumentParser(description='Args for graph predition')
@@ -20,12 +21,10 @@ def get_args():
     parser.add_argument('-h_dim', type=int, default=512, help='hidden dim')
     parser.add_argument('-l_dim', type=int, default=48, help='layer dim')
     parser.add_argument('-drop_n', type=float, default=0.3, help='drop net')
-    parser.add_argument('-drop_c', type=float, default=0.2, help='drop output')
+    parser.add_argument('-drop_c', type=float, default=1.2, help='drop output')
     parser.add_argument('-act_n', type=str, default='ELU', help='network act')
     parser.add_argument('-act_c', type=str, default='ELU', help='output act')
-    # parser.add_argument('-ks', nargs='+', type=float, default='0.9 0.8 0.7')
-    parser.add_argument('-ks', nargs='+', default='0.9 0.8 0.7')
-    # parser.add_argument('-ks', nargs='+', type=float, default=0.9 0.8 0.7)
+    parser.add_argument('-ks', nargs='+', default=[0.9, 0.8, 0.7])
     parser.add_argument('-acc_file', type=str, default='re', help='acc file')
     args, _ = parser.parse_known_args()
     return args
@@ -54,14 +53,9 @@ def main():
     for fold_idx in range(10):
         print('start training ------> fold', fold_idx+1)
         data.use_fold_data(fold_idx)
-        net = GNet(data.n_features_in, data.n_features_out, args)
-
-    
-    # print(len(graphs))
-    # degrees = torch.sum(graphs[0], 1)
-    # graphs[0] = graphs[0] / degrees
-
-    # for each table of the dataset ...
+        net = GNet(data.n_feas_x, data.n_feas_x, args)
+        trainer = Trainer(args, net, data)
+        trainer.train()
 
 if __name__ == "__main__":
     main()
