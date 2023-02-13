@@ -25,9 +25,13 @@ class Trainer:
 
     def to_cuda(self, gs):
         if torch.cuda.is_available():
+            print("Cuda available")
             if type(gs) == list:
                 return [g.cuda() for g in gs]
             return gs.cuda()
+        else:
+            print("Cuda NOT available")
+            exit(1)
         return gs
 
     def run_epoch(self, epoch, data, model, optimizer):

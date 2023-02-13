@@ -53,7 +53,7 @@ def main():
     for fold_idx in range(10):
         print('start training ------> fold', fold_idx+1)
         data.use_fold_data(fold_idx)
-        net = GNet(data.n_feas_x, data.n_feas_x, args)
+        net = GNet(data.n_feas_x, data.n_feas_y, args)
         trainer = Trainer(args, net, data)
         trainer.train()
 

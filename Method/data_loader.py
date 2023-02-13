@@ -13,6 +13,8 @@ import random
 class FileLoader(object):
     def __init__(self, args):
         self.args = args
+        self.max_disp = 0
+        self.max_flux = 0
 
     def get_nodes_edges(self, lines):
         nodes = []
@@ -77,10 +79,40 @@ class FileLoader(object):
 
         return nodes, edges
 
+    def get_maxs(self, tables_dir):
+        for table_path in tqdm(os.listdir(tables_dir), desc="Computing maxs", unit='graphs'):
+            with open(tables_dir+"/"+table_path, 'r') as f:
+                lines = f.readlines()[4:-1]
+
+                # ====  LOAD INDICES
+
+                feat_list = re.sub(' +', ' ', lines[0].strip()).split(" ")
+                id_idx = feat_list.index('NOEUD')
+                nodes_x = []
+                nodes_y = []
+
+                # ==== Compute max features
+
+                for i,line in enumerate(lines[1:]):
+                    node_list_str = re.sub(' +', ' ', line.strip()).split(" ")
+                    if node_list_str[0] == "Displacements":
+                        self.max_disp = max(self.max_disp, float(node_list_str[feat_list.index("DX")]))
+                        self.max_disp = max(self.max_disp, float(node_list_str[feat_list.index("DY")]))
+                        self.max_disp = max(self.max_disp, float(node_list_str[feat_list.index("DZ")]))
+                    else:
+                        fx = float(node_list_str[feat_list.index('FLUX')])
+                        fy = float(node_list_str[feat_list.index('FLUY')])
+                        fz = float(node_list_str[feat_list.index('FLUZ')])
+                        self.max_flux = max(np.sqrt(np.sum(np.power(np.array([fx,fy,fz]),2))), self.max_flux)
+
+        print("max disp: ", self.max_disp)
+        print("max flux: ", self.max_flux)
 
     def load_table(self, table_path):
 
         # ==== READ FILE
+        assert(self.max_disp>0)
+        assert(self.max_flux>0)
 
         # print("loading unv: ", table_path)
 
@@ -94,7 +126,7 @@ class FileLoader(object):
         nodes_x = []
         nodes_y = []
 
-        # ==== LOAD DICTS
+        # ==== Compute max features
 
         ordered = False
         for i,line in enumerate(lines[1:]):
@@ -109,9 +141,9 @@ class FileLoader(object):
                                         # "cx" : float(node_list_str[feat_list.index("COOR_X")]),
                                         # "cy" : float(node_list_str[feat_list.index("COOR_Y")]),
                                         # "cz" : float(node_list_str[feat_list.index("COOR_Z")]),
-                                        "dx" : float(node_list_str[feat_list.index("DX")]),
-                                        "dy" : float(node_list_str[feat_list.index("DY")]),
-                                        "dz" : float(node_list_str[feat_list.index("DZ")])
+                                        "dx" : float(node_list_str[feat_list.index("DX")])/self.max_disp,
+                                        "dy" : float(node_list_str[feat_list.index("DY")])/self.max_disp,
+                                        "dz" : float(node_list_str[feat_list.index("DZ")])/self.max_disp
                                         # "displacements" : np.array([float(node_list_str[feat_list.index('DX')]),
                                         #                             float(node_list_str[feat_list.index('DY')]),
                                         #                             float(node_list_str[feat_list.index('DZ')])]),
@@ -137,12 +169,10 @@ class FileLoader(object):
                 id = int(node_list_str[id_idx][1:])
                 id_list = id-1
                 feature = nodes_y[id_list][1]
-                feature["flux"] = float(node_list_str[feat_list.index('FLUX')])
-                feature["fluy"] = float(node_list_str[feat_list.index('FLUY')])
-                feature["fluz"] = float(node_list_str[feat_list.index('FLUZ')])
-                # feature["flux"] = np.array([float(node_list_str[feat_list.index('FLUX')]),
-                #                             float(node_list_str[feat_list.index('FLUY')]),
-                #                             float(node_list_str[feat_list.index('FLUZ')])]),
+                fx = float(node_list_str[feat_list.index('FLUX')])
+                fy = float(node_list_str[feat_list.index('FLUY')])
+                fz = float(node_list_str[feat_list.index('FLUZ')])
+                feature["fluxn"] = np.sqrt(np.sum(np.power(np.array([fx,fy,fz]),2)))/self.max_flux
 
         return nodes_x, nodes_y
 
@@ -183,6 +213,7 @@ class FileLoader(object):
         return graphs
 
     def get_data(self, tables_dir, unv_path):
+        self.get_maxs(tables_dir)   
         nodes, edges = self.load_unv(unv_path)
         graphs = self.get_graphs(tables_dir, nodes, edges)
         return G_data( graphs )

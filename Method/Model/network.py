@@ -13,14 +13,12 @@ class GNet(nn.Module):
         self.g_unet = GraphUnet(
             args.ks, args.l_dim, args.l_dim, args.l_dim, self.n_act,
             args.drop_n)
-        self.o_gcn = GCN(args.l_dim, out_dim, torch.nn.modules.activation.Tanh(), args.drop_n)
+        self.o_gcn = GCN(args.l_dim, out_dim, torch.nn.modules.activation.ReLU(), args.drop_n)
         # self.o_gcn = GCN(args.l_dim, out_dim, self.n_act, args.drop_n)
         # self.out_l_1 = nn.Linear(3*args.l_dim*(args.l_num+1), args.h_dim)
         # self.out_l_2 = nn.Linear(args.h_dim, n_classes)
         # self.out_drop = nn.Dropout(p=args.drop_c)
         Initializer.weights_init(self)
-        # print(type(self.n_act))
-        # print(self.n_act)
 
     def forward(self, gs, hs, ys):
         hs, ys = self.embed(gs, hs, ys)
