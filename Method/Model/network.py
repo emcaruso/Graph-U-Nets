@@ -8,7 +8,6 @@ class GNet(nn.Module):
     def __init__(self, in_dim, out_dim, args):
         super(GNet, self).__init__()
         self.n_act = getattr(nn, args.act_n)()
-        self.c_act = getattr(nn, args.act_c)()
         self.i_gcn = GCN(in_dim, args.l_dim, self.n_act, args.drop_n)
         self.g_unet = GraphUnet(
             args.ks, args.l_dim, args.l_dim, args.l_dim, self.n_act,
@@ -48,13 +47,6 @@ class GNet(nn.Module):
     #     h = torch.cat(h_max + h_sum + h_mean)
     #     return h
 
-    # def classify(self, h):
-    #     h = self.out_drop(h)
-    #     h = self.out_l_1(h)
-    #     h = self.c_act(h)
-    #     h = self.out_drop(h)
-    #     h = self.out_l_2(h)
-    #     return F.log_softmax(h, dim=1)
 
 
     def metric(self, ys_pred, ys_gt):

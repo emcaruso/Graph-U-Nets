@@ -201,7 +201,7 @@ class FileLoader(object):
         graph.feas_x = feas_x
         graph.feas_y = feas_y
 
-        A = torch.FloatTensor(nx.to_numpy_matrix(graph))
+        A = torch.FloatTensor(nx.to_numpy_array(graph))
         graph.A = A + torch.eye(graph.number_of_nodes())
         return graph
 
