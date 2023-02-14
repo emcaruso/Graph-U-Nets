@@ -3,9 +3,9 @@ MAINDIR=${SCRIPTDIR}"/Method/main.py"
 
 for lr in 0.001 0.01 0.0001
 do
-for batch in 5 8
+for batch in 3 5 8
 do
-for l_dim in 16 32 48
+for l_dim in 16 32 48 64
 do
 for drop_n in 0.3 0.2 0.4
 do
