@@ -10,13 +10,13 @@ from Model.trainer import Trainer
 
 def get_args():
     parser = argparse.ArgumentParser(description='Args for graph predition')
-    parser.add_argument('-data', type=str, default='synth', help='data folder name')
+    parser.add_argument('-data', type=str, default='real', help='data folder name')
     parser.add_argument('-seed', type=int, default=1, help='seed')
     parser.add_argument('-fold', type=int, default=1, help='fold (1..10)')
     parser.add_argument('-num_epochs', type=int, default=200, help='epochs')
     # parser.add_argument('-num_epochs_save', type=int, default=20, help='epoch save for history')
-    parser.add_argument('-batch', type=int, default=8, help='batch size')
-    parser.add_argument('-lr', type=float, default=0.001, help='learning rate')
+    parser.add_argument('-batch', type=int, default=5, help='batch size')
+    parser.add_argument('-lr', type=float, default=0.0001, help='learning rate')
     # parser.add_argument('-deg_as_tag', type=int, default=0, help='1 or degree')
     # parser.add_argument('-l_num', type=int, default=3, help='layer num')
     # parser.add_argument('-h_dim', type=int, default=512, help='hidden dim')

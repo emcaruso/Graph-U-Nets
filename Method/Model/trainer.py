@@ -60,7 +60,7 @@ class Trainer:
         self.optimizer = optim.Adam(
             self.net.parameters(), lr=self.args.lr, amsgrad=True,
             # weight_decay=self.args.weight_decay)
-            weight_decay=1.0008)
+            weight_decay=0.0008)
 
     def to_cuda(self, gs):
         if torch.cuda.is_available():
@@ -69,7 +69,7 @@ class Trainer:
             return gs.cuda()
         else:
             print("Cuda NOT available")
-            # exit(1)
+            exit(1)
         return gs
 
     def run_epoch(self, epoch, data, model, optimizer):
@@ -93,7 +93,11 @@ class Trainer:
         test_str = 'Test epoch %d: loss %.5f'
         line_str = '%d:\t%.5f\n'
         losses = []
+        count = 0
         for e_id in range(self.epoch,self.args.num_epochs):
+            # early stopping
+            if count > 10:
+                break
             self.epoch = e_id
             self.net.train()
             loss_train = self.run_epoch(
@@ -110,8 +114,10 @@ class Trainer:
             # if e_id%self.args.num_epochs_save==0 and e_id!=0:
 
             # save best model
+            count += 1
             if self.best_loss>loss_val:
                 self.save_last_model(loss_val, self.checkpoint_dir+"/best_models/"+self.args_name)
+                count = 0
 
             # self.loss_hist.save()
 

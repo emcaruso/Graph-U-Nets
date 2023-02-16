@@ -112,7 +112,10 @@ def norm_g(g):
     # g = torch.divide( g, degrees )
     
     inv_degrees = (1.0 / degrees.to_dense())
-    diag_inv_scalars = torch.sparse_coo_tensor(indices=torch.stack([torch.arange(g.shape[0]), torch.arange(g.shape[0])]), values=inv_degrees, size=g.shape)
+    if torch.cuda.is_available():
+        diag_inv_scalars = torch.sparse_coo_tensor(indices=torch.stack([torch.arange(g.shape[0]), torch.arange(g.shape[0])]).cuda(), values=inv_degrees, size=g.shape).cuda()
+    else:
+        diag_inv_scalars = torch.sparse_coo_tensor(indices=torch.stack([torch.arange(g.shape[0]), torch.arange(g.shape[0])]), values=inv_degrees, size=g.shape)
     g = torch.sparse.mm(g, diag_inv_scalars)
 
     # print(g)
