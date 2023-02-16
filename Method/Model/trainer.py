@@ -7,10 +7,10 @@ import pickle
 from matplotlib import pyplot as plt
 
 class LossHist:
-    def __init__(self, path):
+    def __init__(self, path, name):
         self.losses_train = []
         self.losses_val = []
-        self.name = "loss_hist"
+        self.name = name
         self.path = path
 
     def save(self):
@@ -40,11 +40,13 @@ class Trainer:
         self.init(args, G_data.train_gs, G_data.test_gs)
         self.epoch = 0
         self.best_loss = 10000000000
-        self.args_name = {k:vars(args)[k] for k in ('batch','lr','l_dim','drop_n','act_n') if k in vars(args)}
-        self.checkpoint_dir = checkpoint_dir+"/"+str(self.args_name)[1:-1]
+        self.args_name = {k:vars(args)[k] for k in ('batch','lr','l_dim','drop_n','act_i','act_n') if k in vars(args)}
+        self.args_name = str(self.args_name)[2:-1]
+        # self.checkpoint_dir = checkpoint_dir+"/"+str(self.args_name)[2:-1]
+        self.checkpoint_dir = checkpoint_dir
         if not os.path.exists(self.checkpoint_dir):
             os.makedirs(self.checkpoint_dir)
-        self.loss_hist = LossHist(self.checkpoint_dir)
+        self.loss_hist = LossHist(self.checkpoint_dir+"/loss_images", self.args_name)
         if torch.cuda.is_available():
             self.net.cuda()
         
@@ -58,7 +60,7 @@ class Trainer:
         self.optimizer = optim.Adam(
             self.net.parameters(), lr=self.args.lr, amsgrad=True,
             # weight_decay=self.args.weight_decay)
-            weight_decay=0.0008)
+            weight_decay=1.0008)
 
     def to_cuda(self, gs):
         if torch.cuda.is_available():
@@ -109,9 +111,9 @@ class Trainer:
 
             # save best model
             if self.best_loss>loss_val:
-                self.save_last_model(loss_val, self.checkpoint_dir+"/best_model")
+                self.save_last_model(loss_val, self.checkpoint_dir+"/best_models/"+self.args_name)
 
-            self.loss_hist.save()
+            # self.loss_hist.save()
 
         self.loss_hist.plot()
 

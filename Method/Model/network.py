@@ -8,11 +8,13 @@ class GNet(nn.Module):
     def __init__(self, in_dim, out_dim, args):
         super(GNet, self).__init__()
         self.n_act = getattr(nn, args.act_n)()
-        self.i_gcn = GCN(in_dim, args.l_dim, self.n_act, args.drop_n)
+        self.i_act = getattr(nn, args.act_i)()
+        self.o_act = getattr(nn, args.act_o)()
+        self.i_gcn = GCN(in_dim, args.l_dim, self.i_act, args.drop_n)
         self.g_unet = GraphUnet(
             args.ks, args.l_dim, args.l_dim, args.l_dim, self.n_act,
             args.drop_n)
-        self.o_gcn = GCN(args.l_dim, out_dim, torch.nn.modules.activation.ReLU(), args.drop_n)
+        self.o_gcn = GCN(args.l_dim, out_dim, self.o_act, args.drop_n)
         # self.o_gcn = GCN(args.l_dim, out_dim, self.n_act, args.drop_n)
         # self.out_l_1 = nn.Linear(3*args.l_dim*(args.l_num+1), args.h_dim)
         # self.out_l_2 = nn.Linear(args.h_dim, n_classes)
@@ -34,6 +36,8 @@ class GNet(nn.Module):
         return hs, ys
 
     def embed_one(self, g, h):
+        # print(type(g))
+        # print(g.size())
         g = norm_g(g)
         h = self.i_gcn(g, h)
         hs = self.g_unet(g, h)

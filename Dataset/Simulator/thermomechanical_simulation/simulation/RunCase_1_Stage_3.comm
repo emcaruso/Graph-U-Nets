@@ -22,17 +22,17 @@ fieldmatthermo = AFFE_MATERIAU(identifier='3:1',
 
 loadthermal = AFFE_CHAR_THER(identifier='4:1',
                              ECHANGE=_F(COEF_H=15.0,
-                                        GROUP_MA=('top', 'rings', 'bottom'),
+                                        GROUP_MA=('surface', ),
                                         TEMP_EXT=25.0),
-                             FLUX_REP=_F(FLUN=1000000.0,
-                                         GROUP_MA=('patch_8', )),
+                             FLUX_REP=_F(FLUN=500000.0,
+                                         GROUP_MA=('patch_9', )),
                              MODELE=modelthermo)
 
 resther = THER_LINEAIRE(identifier='5:1',
                         CHAM_MATER=fieldmatthermo,
                         EXCIT=_F(CHARGE=loadthermal),
                         MODELE=modelthermo,
-                        SOLVEUR=_F(RESI_RELA=1e-06))
+                        SOLVEUR=_F(RESI_RELA=0.0001))
 
 resther = CALC_CHAMP(identifier='6:1',
                      reuse=resther,

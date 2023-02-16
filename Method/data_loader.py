@@ -8,13 +8,36 @@ from functools import partial
 import re
 import os
 import random
+from torch_geometric.utils.convert import from_networkx
+
 
 
 class FileLoader(object):
-    def __init__(self, args):
+    def __init__(self, unv_path, tables_dir, args):
         self.args = args
+        self.unv_path = unv_path    
+        self.tables_dir = tables_dir
         self.max_disp = 0
         self.max_flux = 0
+        self.patches = []
+
+    # def get_patches(self, lines):
+        # for i in range(10):
+        #     patch_name = "patch_"+str(i)
+        #     list = [i for i, line in enumerate(lines) if patch_name in line]
+        #     idx = list[0]
+        #     j = 1
+        #     face_ids = []
+        #     node_ids = []
+        #     while True:
+        #         line = lines[idx+j]
+        #         j += 1
+        #         if int(line[0]) != 8: break
+        #         face_id = [line[1]]
+        #         if len(line)>=6: node_ids.append(int(line[5]))
+        #         line_nodes = [ for line in lines if line[0] == face_id]
+        #         node_ids+= node_ids_curr
+        #     self.patches.append(node_ids)
 
     def get_nodes_edges(self, lines):
         nodes = []
@@ -22,37 +45,40 @@ class FileLoader(object):
         flag = True
         line_idx = 19
         max_distance = 0
+
+        lines= [ re.sub(' +', ' ', line.strip()).split(" ") for line in lines ]
         
         while True:
             if flag:
                 line = lines[line_idx]
 
-                node_id = int(re.sub(' +', ' ', line.strip()).split(" ")[0])
+                node_id = int(line[0])
                 if node_id == -1:
                     flag = False
                     line_idx += 3
                     continue
-                nodes_x = float(re.sub(' +', ' ', lines[line_idx+1].strip()).split(" ")[0])
-                nodes_y = float(re.sub(' +', ' ', lines[line_idx+1].strip()).split(" ")[1])
-                node_z = float(re.sub(' +', ' ', lines[line_idx+1].strip()).split(" ")[2])
+                nodes_x = float(lines[line_idx+1][0])
+                nodes_y = float(lines[line_idx+1][1])
+                node_z = float(lines[line_idx+1][2])
                 if node_id == -1:
                     flag = False
                     line_idx += 3
                     continue
                 nodes.append( ( node_id, { "id" : node_id, "coords": np.array([nodes_x, nodes_y, node_z])} ) )
+                edges.append( (node_id, node_id, 0) )
                 line_idx += 2
             else:
                 line = lines[line_idx]
-                edge_id = int(re.sub(' +', ' ', line.strip()).split(" ")[0])
-                edge_type = int(re.sub(' +', ' ', line.strip()).split(" ")[1])
+                edge_id = int(line[0])
+                edge_type = int(line[1])
                 if edge_type != 11:
                     break
 
                 line_idx += 2
 
                 line = lines[line_idx]
-                edge_v1 = int(re.sub(' +', ' ', line.strip()).split(" ")[0])
-                edge_v2 = int(re.sub(' +', ' ', line.strip()).split(" ")[1])
+                edge_v1 = int(line[0])
+                edge_v2 = int(line[1])
                 coords_v1 = next(item for item in nodes if item[0] == edge_v1)[1]["coords"]
                 coords_v2 = next(item for item in nodes if item[0] == edge_v2)[1]["coords"]
                 distance = np.sqrt(np.sum(np.power((coords_v1-coords_v2),2)))
@@ -62,59 +88,31 @@ class FileLoader(object):
 
                 line_idx += 1
 
-        edges = list(map(lambda t : (t[0],t[1],t[2]/max_distance), edges))
-        return nodes, edges
+        edges = list(map(lambda t : (t[0],t[1],1-t[2]/max_distance), edges))
 
-        
-    def load_unv(self, unv_path):
+        # self.get_patches(lines)
+
+        return nodes, edges        
+
+    def load_unv(self):
         
         # ==== READ FILE
 
         print("Loading unv file ...")
 
-        with open(unv_path, 'r') as f:
+        with open(self.unv_path, 'r') as f:
             lines = f.readlines()
 
-        nodes, edges = self.get_nodes_edges(lines)
+        nodes, edges  = self.get_nodes_edges(lines)
 
         return nodes, edges
 
-    def get_maxs(self, tables_dir):
-        for table_path in tqdm(os.listdir(tables_dir), desc="Computing maxs", unit='graphs'):
-            with open(tables_dir+"/"+table_path, 'r') as f:
-                lines = f.readlines()[4:-1]
+    def table2nodefeas(self, table_path):
 
-                # ====  LOAD INDICES
 
-                feat_list = re.sub(' +', ' ', lines[0].strip()).split(" ")
-                id_idx = feat_list.index('NOEUD')
-                nodes_x = []
-                nodes_y = []
-
-                # ==== Compute max features
-
-                for i,line in enumerate(lines[1:]):
-                    node_list_str = re.sub(' +', ' ', line.strip()).split(" ")
-                    if node_list_str[0] == "Displacements":
-                        self.max_disp = max(self.max_disp, float(node_list_str[feat_list.index("DX")]))
-                        self.max_disp = max(self.max_disp, float(node_list_str[feat_list.index("DY")]))
-                        self.max_disp = max(self.max_disp, float(node_list_str[feat_list.index("DZ")]))
-                    else:
-                        fx = float(node_list_str[feat_list.index('FLUX')])
-                        fy = float(node_list_str[feat_list.index('FLUY')])
-                        fz = float(node_list_str[feat_list.index('FLUZ')])
-                        self.max_flux = max(np.sqrt(np.sum(np.power(np.array([fx,fy,fz]),2))), self.max_flux)
-
-        print("max disp: ", self.max_disp)
-        print("max flux: ", self.max_flux)
-
-    def load_table(self, table_path):
-
-        # ==== READ FILE
-        assert(self.max_disp>0)
-        assert(self.max_flux>0)
-
-        # print("loading unv: ", table_path)
+        lst = table_path.split("/")[-1].split(",")
+        fluxn_val = lst[0]
+        patch_idx = int(lst[1][-5])
 
         with open(table_path, 'r') as f:
             lines = f.readlines()[4:-1]
@@ -126,7 +124,7 @@ class FileLoader(object):
         nodes_x = []
         nodes_y = []
 
-        # ==== Compute max features
+        # ==== Compute features
 
         ordered = False
         for i,line in enumerate(lines[1:]):
@@ -141,9 +139,9 @@ class FileLoader(object):
                                         # "cx" : float(node_list_str[feat_list.index("COOR_X")]),
                                         # "cy" : float(node_list_str[feat_list.index("COOR_Y")]),
                                         # "cz" : float(node_list_str[feat_list.index("COOR_Z")]),
-                                        "dx" : float(node_list_str[feat_list.index("DX")])/self.max_disp,
-                                        "dy" : float(node_list_str[feat_list.index("DY")])/self.max_disp,
-                                        "dz" : float(node_list_str[feat_list.index("DZ")])/self.max_disp
+                                        "dx" : float(node_list_str[feat_list.index("DX")]),
+                                        "dy" : float(node_list_str[feat_list.index("DY")]),
+                                        "dz" : float(node_list_str[feat_list.index("DZ")])
                                         # "displacements" : np.array([float(node_list_str[feat_list.index('DX')]),
                                         #                             float(node_list_str[feat_list.index('DY')]),
                                         #                             float(node_list_str[feat_list.index('DZ')])]),
@@ -157,8 +155,11 @@ class FileLoader(object):
                                 int(node_list_str[id_idx][1:]),
                                 {
                                         # "id" : int(node_list_str[id_idx][1:]),
+                                        # "fluxn" : 0.0
                                 }
                         ))
+            # else:
+            #     break
 
             else:
                 if not ordered:
@@ -172,11 +173,36 @@ class FileLoader(object):
                 fx = float(node_list_str[feat_list.index('FLUX')])
                 fy = float(node_list_str[feat_list.index('FLUY')])
                 fz = float(node_list_str[feat_list.index('FLUZ')])
-                feature["fluxn"] = np.sqrt(np.sum(np.power(np.array([fx,fy,fz]),2)))/self.max_flux
+                feature["fluxn"] = np.sqrt(np.sum(np.power(np.array([fx,fy,fz]),2)))
+
+        # nodes_x = sorted(nodes_x, key=lambda i: i[0])
+        # nodes_y = sorted(nodes_y, key=lambda i: i[0])
+        # for id in self.patches[patch_idx]:
+        #     try:
+        #         nodes_y[id][1]["fluxn"]=fluxn_val
+        #     except:
+        #         print(id, len(nodes_y))
+        #         exit(1)
+
 
         return nodes_x, nodes_y
 
+    def get_node_boundaries(self, nodes_y):
+        print(self.unv_path)
+        unv_name = self.unv_path.split("/")[-1][:-4]
+        print(unv_name)
+        exit(1)
+
         
+
+        with open(self.unv_path, 'r') as f:
+            lines = f.readlines()
+
+        # for line in lines:
+
+        #     if line==
+
+
     def create_graph(self, nodes_x, edges):
         graph = nx.Graph()
         graph.add_nodes_from(nodes_x)
@@ -186,36 +212,63 @@ class FileLoader(object):
 
     def nodes_2_feas(self, nodes):
         feas = [ list(item[1].values()) for item in nodes]
-        return torch.tensor(feas)
+        feas_tens = torch.tensor(feas)
+        max_val = feas_tens.max()
+        return feas_tens, max_val
+
+    def normalize_graphs(self, graphs):
+        print(f"{ self.max_disp = }")
+        print(f"{ self.max_flux = }")
+        for graph in graphs:
+            graph.feas_x = torch.mul(graph.feas_x, 1.0/self.max_disp)
+            graph.feas_y = torch.mul(graph.feas_y, 1.0/self.max_flux)
+        return graphs
 
 
-    def get_graph(self, table_path, nodes, edges):
-        nodes_x, nodes_y = self.load_table(table_path)
+    def get_graph(self, table_path, nodes, edges ):
+        nodes_x, nodes_y = self.table2nodefeas(table_path)
         assert( len(nodes_x)==len(nodes) )
         assert( len(nodes_y)==len(nodes) )
 
-        feas_x = self.nodes_2_feas(nodes_x)
-        feas_y = self.nodes_2_feas(nodes_y)
+        feas_x , norm_x = self.nodes_2_feas(nodes_x)
+        feas_y , norm_y = self.nodes_2_feas(nodes_y)
+
+        self.max_disp=max(self.max_disp, norm_x)
+        self.max_flux=max(self.max_flux, norm_y)
 
         graph =self.create_graph( nodes_x, edges)
         graph.feas_x = feas_x
         graph.feas_y = feas_y
 
-        A = torch.FloatTensor(nx.to_numpy_array(graph))
-        graph.A = A + torch.eye(graph.number_of_nodes())
+        # graph.A = from_networkx(graph)
+        # print(graph.A.edge_weight)
+        # print(graph.A.edge_weight())
+
+        Acoo = nx.to_scipy_sparse_array(graph).tocoo() 
+        graph.A = torch.sparse.FloatTensor(torch.LongTensor([Acoo.row.tolist(), Acoo.col.tolist()]),
+                              torch.FloatTensor(Acoo.data.astype(np.float32))) 
+
+        # graph.A =torch.FloatTensor(nx.to_numpy_array(graph))
+
+        # graph.A = from_networkx(graph)
+        # print(type(graph.A))
+        # print(graph.A)
+        # exit(1)
+        # graph.A = A + torch.eye(graph.number_of_nodes()) # self edges added
         return graph
 
-    def get_graphs(self, tables_dir, nodes, edges):
+    def get_graphs(self, nodes, edges ):
         graphs = []
-        for table_path in tqdm(os.listdir(tables_dir), desc="Loading tables", unit='graphs'):
-            graph = self.get_graph(tables_dir+"/"+table_path, nodes, edges)
+        for table_name in tqdm(os.listdir(self.tables_dir), desc="Loading tables", unit='graphs'):
+            graph = self.get_graph(self.tables_dir+"/"+table_name, nodes, edges )
             graphs.append(graph)
+        graphs = self.normalize_graphs(graphs)
         return graphs
 
-    def get_data(self, tables_dir, unv_path):
-        self.get_maxs(tables_dir)   
-        nodes, edges = self.load_unv(unv_path)
-        graphs = self.get_graphs(tables_dir, nodes, edges)
+
+    def get_data(self):
+        nodes, edges  = self.load_unv()
+        graphs = self.get_graphs( nodes, edges )
         return G_data( graphs )
     
 class G_data(object):

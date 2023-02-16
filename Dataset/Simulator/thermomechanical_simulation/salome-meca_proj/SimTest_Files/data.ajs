@@ -2,27 +2,6 @@
   "history": {
     "cases": [
       {
-        "name": "RunCase_1",
-        "stages": [
-          1,
-          2,
-          3
-        ],
-        "jobInfos": {
-          "mode": "Interactive",
-          "server": "localhost",
-          "memory": 2048,
-          "time": "00:30:00",
-          "version": "15.4",
-          "mpicpu": 1,
-          "nodes": 1,
-          "folder": "/home/manu/Desktop/cj_gunet/Dataset/Simulator/thermomechanical_simulation/salome-meca_proj/SimTest_Files",
-          "wckey": "P10WB:ASTER",
-          "language": "fr",
-          "execmode": "Use optimized version"
-        }
-      },
-      {
         "name": "CurrentCase",
         "stages": [
           1,
@@ -33,7 +12,7 @@
           "mode": "Interactive",
           "server": "localhost",
           "memory": 2048,
-          "time": "00:30:00",
+          "time": "00:15:00",
           "version": "15.4",
           "mpicpu": 1,
           "nodes": 1,
@@ -46,10 +25,10 @@
     "stages": [
       {
         "name": "Stage_1",
-        "text": "meshthermo = LIRE_MAILLAGE(FORMAT='MED', UNITE=20)\n\nmodelthermo = AFFE_MODELE(AFFE=_F(MODELISATION='3D', PHENOMENE='THERMIQUE', TOUT='OUI'), MAILLAGE=meshthermo)\n\nAluminiumthermo = DEFI_MATERIAU(THER=_F(LAMBDA=238.0, RHO_CP=2430000.0))\n\nfieldmatthermo = AFFE_MATERIAU(AFFE=_F(MATER=(Aluminiumthermo, ), TOUT='OUI'), MODELE=modelthermo)\n\nloadthermal = AFFE_CHAR_THER(ECHANGE=_F(COEF_H=15.0, GROUP_MA=('top', 'rings', 'bottom'), TEMP_EXT=25.0), FLUX_REP=_F(FLUN=1000000.0, GROUP_MA=('patch_2', )), MODELE=modelthermo)\n\nresther = THER_LINEAIRE(CHAM_MATER=fieldmatthermo, EXCIT=_F(CHARGE=loadthermal), MODELE=modelthermo, SOLVEUR=_F(RESI_RELA=1e-06))\n\nresther = CALC_CHAMP(reuse=resther, RESULTAT=resther, THERMIQUE=('FLUX_NOEU', 'TEMP_ELGA'))\n\nIMPR_RESU(FORMAT='MED', RESU=_F(RESULTAT=resther), UNITE=3)",
+        "text": "meshthermo = LIRE_MAILLAGE(FORMAT='MED', UNITE=4)\n\nmodelthermo = AFFE_MODELE(AFFE=_F(MODELISATION='3D', PHENOMENE='THERMIQUE', TOUT='OUI'), MAILLAGE=meshthermo)\n\nAluminiumthermo = DEFI_MATERIAU(THER=_F(LAMBDA=238.0, RHO_CP=2430000.0))\n\nfieldmatthermo = AFFE_MATERIAU(AFFE=_F(MATER=(Aluminiumthermo, ), TOUT='OUI'), MODELE=modelthermo)\n\nloadthermal = AFFE_CHAR_THER(ECHANGE=_F(COEF_H=15.0, GROUP_MA=('surface', ), TEMP_EXT=20.0), FLUX_REP=_F(FLUN=1000000.0, GROUP_MA=('patch_0', )), LIAISON_UNIF=(), MODELE=modelthermo)\n\nresther = THER_LINEAIRE(CHAM_MATER=fieldmatthermo, EXCIT=_F(CHARGE=loadthermal), MODELE=modelthermo, SOLVEUR=_F(RESI_RELA=0.001))\n\nresther = CALC_CHAMP(reuse=resther, RESULTAT=resther, THERMIQUE=('FLUX_NOEU', 'FLUX_ELNO', 'ETHE_ELEM', 'FLUX_ELGA', 'HYDR_NOEU', 'SOUR_ELGA', 'TEMP_ELGA'))\n\nIMPR_RESU(FORMAT='MED', RESU=_F(RESULTAT=resther), UNITE=3)",
         "files": [
           {
-            "handle": 20,
+            "handle": 4,
             "filename": "0:1:2:13",
             "attr": 1
           },
@@ -60,17 +39,19 @@
           }
         ],
         "result": {
-          "resstate": 129
+          "resstate": 1
         },
-        "uid": 1
+        "uid": 1,
+        "baseFolder": "Result-Stage_1"
       },
       {
         "name": "Stage_2",
         "text": "modelmeca = AFFE_MODELE(AFFE=_F(MODELISATION='3D', PHENOMENE='MECANIQUE', TOUT='OUI'), MAILLAGE=meshthermo)\n\nprojtemp = PROJ_CHAMP(MODELE_1=modelthermo, MODELE_2=modelmeca, PROJECTION='OUI', RESULTAT=resther)",
         "result": {
-          "resstate": 129
+          "resstate": 1
         },
-        "uid": 2
+        "uid": 2,
+        "baseFolder": "Result-Stage_2"
       },
       {
         "name": "Stage_3",
@@ -90,7 +71,8 @@
         "result": {
           "resstate": 1
         },
-        "uid": 3
+        "uid": 3,
+        "baseFolder": "Result-Stage_3"
       }
     ],
     "aster": "stable",

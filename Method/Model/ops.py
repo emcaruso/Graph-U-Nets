@@ -95,16 +95,29 @@ def top_k_graph(scores, g, h, k):
     values = torch.unsqueeze(values, -1)
     new_h = torch.mul(new_h, values)
     un_g = g.bool().float()
-    un_g = torch.matmul(un_g, un_g).bool().float()
-    un_g = un_g[idx, :]
-    un_g = un_g[:, idx]
+    un_g = torch.sparse.mm(un_g, un_g).bool().float()
+    # un_g = torch.matmul(un_g, un_g).bool().float()
+    # un_g = un_g[idx, :]
+    un_g = un_g.index_select(0,idx)
+    # un_g = un_g[:, idx]
+    un_g = un_g.index_select(1,idx)
     g = norm_g(un_g)
     return g, new_h, idx
 
 
 def norm_g(g):
-    degrees = torch.sum(g, 1)
-    g = g / degrees
+    degrees = torch.sparse.sum(g, 1)
+    # degrees = torch.sum(g, 1)
+    # print(degrees)
+    # g = torch.divide( g, degrees )
+    
+    inv_degrees = (1.0 / degrees.to_dense())
+    diag_inv_scalars = torch.sparse_coo_tensor(indices=torch.stack([torch.arange(g.shape[0]), torch.arange(g.shape[0])]), values=inv_degrees, size=g.shape)
+    g = torch.sparse.mm(g, diag_inv_scalars)
+
+    # print(g)
+    # g = g / degrees
+    # print(g.to_dense())
     return g
 
 

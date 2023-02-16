@@ -46,10 +46,10 @@
     "stages": [
       {
         "name": "Stage_1",
-        "text": "meshthermo = LIRE_MAILLAGE(FORMAT='MED', UNITE=20)\n\nmodelthermo = AFFE_MODELE(AFFE=_F(MODELISATION='3D', PHENOMENE='THERMIQUE', TOUT='OUI'), MAILLAGE=meshthermo)\n\nAluminiumthermo = DEFI_MATERIAU(THER=_F(LAMBDA=238.0, RHO_CP=2430000.0))\n\nfieldmatthermo = AFFE_MATERIAU(AFFE=_F(MATER=(Aluminiumthermo, ), TOUT='OUI'), MODELE=modelthermo)\n\nloadthermal = AFFE_CHAR_THER(ECHANGE=_F(COEF_H=15.0, GROUP_MA=('top', 'rings', 'bottom'), TEMP_EXT=25.0), FLUX_REP=_F(FLUN=1000000.0, GROUP_MA=('patch_2', )), MODELE=modelthermo)\n\nresther = THER_LINEAIRE(CHAM_MATER=fieldmatthermo, EXCIT=_F(CHARGE=loadthermal), MODELE=modelthermo, SOLVEUR=_F(RESI_RELA=1e-06))\n\nresther = CALC_CHAMP(reuse=resther, RESULTAT=resther, THERMIQUE=('FLUX_NOEU', 'TEMP_ELGA'))\n\nIMPR_RESU(FORMAT='MED', RESU=_F(RESULTAT=resther), UNITE=3)",
+        "text": "meshthermo = LIRE_MAILLAGE(FORMAT='MED', UNITE=4)\n\nmodelthermo = AFFE_MODELE(AFFE=_F(MODELISATION='3D', PHENOMENE='THERMIQUE', TOUT='OUI'), MAILLAGE=meshthermo)\n\nAluminiumthermo = DEFI_MATERIAU(THER=_F(LAMBDA=238.0, RHO_CP=2430000.0))\n\nfieldmatthermo = AFFE_MATERIAU(AFFE=_F(MATER=(Aluminiumthermo, ), TOUT='OUI'), MODELE=modelthermo)\n\nloadthermal = AFFE_CHAR_THER(ECHANGE=_F(COEF_H=15.0, GROUP_MA=('surface', ), TEMP_EXT=20.0), FLUX_REP=_F(FLUN=1000000.0, GROUP_MA=('patch_0', )), LIAISON_UNIF=(), MODELE=modelthermo)\n\nresther = THER_LINEAIRE(CHAM_MATER=fieldmatthermo, EXCIT=_F(CHARGE=loadthermal), MODELE=modelthermo, SOLVEUR=_F(RESI_RELA=0.001))\n\nresther = CALC_CHAMP(reuse=resther, RESULTAT=resther, THERMIQUE=('FLUX_NOEU', ))\n\nIMPR_RESU(FORMAT='MED', RESU=_F(RESULTAT=resther), UNITE=3)",
         "files": [
           {
-            "handle": 20,
+            "handle": 4,
             "filename": "0:1:2:13",
             "attr": 1
           },
@@ -74,7 +74,7 @@
       },
       {
         "name": "Stage_3",
-        "text": "Aluminiummeca = DEFI_MATERIAU(ELAS=_F(ALPHA=1.2e-05, E=70000000000.0, NU=0.32, RHO=2.5e-09))\n\nfieldmatmeca = AFFE_MATERIAU(AFFE=_F(MATER=(Aluminiummeca, ), TOUT='OUI'), AFFE_VARC=_F(EVOL=projtemp, NOM_VARC='TEMP', TOUT='OUI', VALE_REF=20.0), MODELE=modelmeca)\n\nloadmeca = AFFE_CHAR_MECA(FACE_IMPO=(_F(DX=0.0, DY=0.0, GROUP_MA=('fix', )), _F(DZ=0.0, GROUP_MA=('bottom', ))), MODELE=modelmeca, PRES_REP=())\n\nreslin = MECA_STATIQUE(CHAM_MATER=fieldmatmeca, EXCIT=_F(CHARGE=loadmeca), MODELE=modelmeca, SOLVEUR=_F(RESI_RELA=0.0001))\n\nreslin = CALC_CHAMP(reuse=reslin, CONTRAINTE=('SIGM_NOEU', 'SIGM_ELNO', 'SIGM_ELGA'), RESULTAT=reslin)\n\ntable = POST_RELEVE_T(ACTION=(_F(GROUP_NO=('top', 'rings', 'bottom'), INTITULE='Displacements', NOM_CHAM='DEPL', NOM_CMP=('DX', 'DY', 'DZ'), OPERATION=('EXTRACTION', ), RESULTAT=reslin), _F(GROUP_NO=('top', 'rings', 'bottom'), INTITULE='flux', NOM_CHAM='FLUX_NOEU', OPERATION=('EXTRACTION', ), RESULTAT=resther, TOUT_CMP='OUI')))\n\nIMPR_RESU(FORMAT='MED', RESU=_F(RESULTAT=reslin), UNITE=2)\n\nIMPR_TABLE(TABLE=table, UNITE=8)",
+        "text": "Aluminiummeca = DEFI_MATERIAU(ELAS=_F(ALPHA=1.2e-05, E=70000000000.0, NU=0.32, RHO=2.5e-09))\n\nfieldmatmeca = AFFE_MATERIAU(AFFE=_F(MATER=(Aluminiummeca, ), TOUT='OUI'), AFFE_VARC=_F(EVOL=projtemp, NOM_VARC='TEMP', TOUT='OUI', VALE_REF=20.0), MODELE=modelmeca)\n\nloadmeca = AFFE_CHAR_MECA(FACE_IMPO=(_F(DX=0.0, DY=0.0, GROUP_MA=('fix', )), _F(DZ=0.0, GROUP_MA=('bottom', ))), MODELE=modelmeca, PRES_REP=())\n\nreslin = MECA_STATIQUE(CHAM_MATER=fieldmatmeca, EXCIT=_F(CHARGE=loadmeca), MODELE=modelmeca, SOLVEUR=_F(RESI_RELA=0.0001))\n\nreslin = CALC_CHAMP(reuse=reslin, CONTRAINTE=('SIGM_NOEU', 'SIGM_ELNO', 'SIGM_ELGA'), RESULTAT=reslin)\n\ntable = POST_RELEVE_T(ACTION=(_F(GROUP_NO=('all', ), INTITULE='Displacements', NOM_CHAM='DEPL', NOM_CMP=('DX', 'DY', 'DZ'), OPERATION=('EXTRACTION', ), RESULTAT=reslin), _F(GROUP_NO=('all', ), INTITULE='flux', NOM_CHAM='FLUX_NOEU', OPERATION=('EXTRACTION', ), RESULTAT=resther, TOUT_CMP='OUI')))\n\nIMPR_RESU(FORMAT='MED', RESU=_F(RESULTAT=reslin), UNITE=2)\n\nIMPR_TABLE(TABLE=table, UNITE=8)",
         "files": [
           {
             "handle": 2,

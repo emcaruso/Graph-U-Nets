@@ -1,5 +1,0 @@
-#!/bin/bash
-export ASTER_TMPDIR=/tmp
-wrap=$(which xterm && echo ' -e ')
-versroot=$(as_run --vers=15.4 --getversion_path)/../..
-${versroot}/bin/run_aster export 2> ./logs/stderr_command_salome.log

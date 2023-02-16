@@ -10,8 +10,8 @@ from Model.trainer import Trainer
 
 def get_args():
     parser = argparse.ArgumentParser(description='Args for graph predition')
+    parser.add_argument('-data', type=str, default='synth', help='data folder name')
     parser.add_argument('-seed', type=int, default=1, help='seed')
-    # parser.add_argument('-data', default='DD', help='data folder name')
     parser.add_argument('-fold', type=int, default=1, help='fold (1..10)')
     parser.add_argument('-num_epochs', type=int, default=200, help='epochs')
     # parser.add_argument('-num_epochs_save', type=int, default=20, help='epoch save for history')
@@ -23,6 +23,8 @@ def get_args():
     parser.add_argument('-l_dim', type=int, default=48, help='layer dim')
     parser.add_argument('-drop_n', type=float, default=0.3, help='drop net')
     # parser.add_argument('-drop_c', type=float, default=1.2, help='drop output')
+    parser.add_argument('-act_i', type=str, default='Sigmoid', help='network act')
+    parser.add_argument('-act_o', type=str, default='ReLU', help='network act')
     parser.add_argument('-act_n', type=str, default='ELU', help='network act')
     # parser.add_argument('weight_decay', type=float, default=0.0008, help='weight decay')
     # parser.add_argument('-act_c', type=str, default='ELU', help='output act')
@@ -31,30 +33,25 @@ def get_args():
     args, _ = parser.parse_known_args()
     return args
 
-def get_filelist():
-    data_dir = os.path.realpath(os.path.dirname(__file__)+"/../Dataset/Data")
-    tables_dir = data_dir+"/table_results"
-    table_names = os.listdir(tables_dir)
 
 def main():
     args = get_args()
-    # dictn = {k:vars(args)[k] for k in ('batch','lr','l_dim','drop_n','act_n') if k in vars(args)}
-    # args_str = str(dictn)
     print(args)
-    get_filelist()
     
     # get paths
     method_dir =os.path.realpath(os.path.dirname(__file__)) 
-    data_dir = method_dir+"/../Dataset/Data"
+    data_dir = method_dir+"/../Dataset/Data/"+args.data
     tables_dir = data_dir+"/table_results"
-    table_paths = os.listdir(tables_dir)
     checkpoint_dir = method_dir+"/Model/checkpoints"
-    geometry_path = data_dir+"/geometry_cj.unv"
+    geometry_path = data_dir+"/"+args.data+".unv"
+    assert(os.path.isdir(tables_dir))
+    assert(os.path.isdir(checkpoint_dir))
+    assert(os.path.isfile(geometry_path))
     print("tables in ", tables_dir )
     print("geometry: ", geometry_path )
 
-    file_loader = FileLoader(args) # file loader
-    data = file_loader.get_data(tables_dir, geometry_path) # graph list
+    file_loader = FileLoader(geometry_path, tables_dir, args) # file loader
+    data = file_loader.get_data() # graph list
     for fold_idx in range(args.fold):
         print('start training ------> fold', fold_idx+1)
         data.use_fold_data(fold_idx)
