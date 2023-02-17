@@ -9,6 +9,8 @@ import re
 import os
 import random
 from torch_geometric.utils.convert import from_networkx
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 
 
@@ -65,30 +67,32 @@ class FileLoader(object):
                     line_idx += 3
                     continue
                 nodes.append( ( node_id, { "id" : node_id, "coords": np.array([nodes_x, nodes_y, node_z])} ) )
-                edges.append( (node_id, node_id, 0) )
                 line_idx += 2
             else:
+                # break
+
                 line = lines[line_idx]
-                edge_id = int(line[0])
-                edge_type = int(line[1])
-                if edge_type != 11:
+                if line[0]=='-1':
                     break
+                el_type = int(line[1])
+                if el_type == 11:
+                    line_idx += 3
+                elif el_type == 41:
+                    line_idx += 2
+                elif el_type == 111:
+                    line = lines[line_idx+1]
+                    vs = list(map(int, line[0:4]))
+                    for vi in vs:
+                        for vj in vs:
+                            coords_vi = next(item for item in nodes if item[0] == vi)[1]["coords"]
+                            coords_vj = next(item for item in nodes if item[0] == vj)[1]["coords"]
+                            distance = np.sqrt(np.sum(np.power((coords_vi-coords_vj),2)))
+                            max_distance = max(distance, max_distance)
+                            edges.append( (vi, vj, distance) )
+                            edges.append( (vj, vi, distance) ) # undirected?
+                    line_idx += 2
 
-                line_idx += 2
-
-                line = lines[line_idx]
-                edge_v1 = int(line[0])
-                edge_v2 = int(line[1])
-                coords_v1 = next(item for item in nodes if item[0] == edge_v1)[1]["coords"]
-                coords_v2 = next(item for item in nodes if item[0] == edge_v2)[1]["coords"]
-                distance = np.sqrt(np.sum(np.power((coords_v1-coords_v2),2)))
-                max_distance = max(distance, max_distance)
-                edges.append( (edge_v1, edge_v2, distance) )
-                edges.append( (edge_v2, edge_v1, distance) ) # undirected?
-
-                line_idx += 1
-
-        edges = list(map(lambda t : (t[0],t[1],1-t[2]/max_distance), edges))
+        # edges = list(map(lambda t : (t[0],t[1],1-t[2]/max_distance), edges))
 
         # self.get_patches(lines)
 
@@ -106,6 +110,49 @@ class FileLoader(object):
         nodes, edges  = self.get_nodes_edges(lines)
 
         return nodes, edges
+
+    def debug_mesh(self, graph, nodes):
+        pos = {}
+
+        # show displacements
+        # for v in graph.nodes.data():
+        #     pos[v[0]] = np.array([v[1]["dx"],v[1]["dy"],v[1]["dz"]])
+
+        # show coordinates
+        for v in nodes:
+            pos[v[0]] = v[1]["coords"]
+
+        node_xyz = np.array([ v for k,v in pos.items()])
+        edge_xyz = np.array( [ np.array([node_xyz[e[0]-1],node_xyz[e[1]-1]])  for e in graph.edges()] )
+
+        # Create the 3D figure
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection="3d")
+
+        # Plot the nodes - alpha is scaled by "depth" automatically
+        ax.scatter(*node_xyz.T, s=100, ec="w")
+
+        # Plot the edges
+        for vizedge in edge_xyz:
+            ax.plot(*vizedge.T, color="tab:gray")
+
+
+        def _format_axes(ax):
+            """Visualization options for the 3D axes."""
+            # Turn gridlines off
+            ax.grid(False)
+            # Suppress tick labels
+            for dim in (ax.xaxis, ax.yaxis, ax.zaxis):
+                dim.set_ticks([])
+            # Set axes labels
+            ax.set_xlabel("x")
+            ax.set_ylabel("y")
+            ax.set_zlabel("z")
+
+
+        _format_axes(ax)
+        fig.tight_layout()
+        plt.show()
 
     def table2nodefeas(self, table_path):
 
@@ -187,20 +234,6 @@ class FileLoader(object):
 
         return nodes_x, nodes_y
 
-    def get_node_boundaries(self, nodes_y):
-        print(self.unv_path)
-        unv_name = self.unv_path.split("/")[-1][:-4]
-        print(unv_name)
-        exit(1)
-
-        
-
-        with open(self.unv_path, 'r') as f:
-            lines = f.readlines()
-
-        # for line in lines:
-
-        #     if line==
 
 
     def create_graph(self, nodes_x, edges):
@@ -237,6 +270,8 @@ class FileLoader(object):
         self.max_flux=max(self.max_flux, norm_y)
 
         graph =self.create_graph( nodes_x, edges)
+        # self.debug_mesh(graph, nodes)
+
         graph.feas_x = feas_x
         graph.feas_y = feas_y
 

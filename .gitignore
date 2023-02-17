@@ -1,2 +1,3 @@
 med_results/
-.*hdf
+SimTest_Files/
+*.hdf
