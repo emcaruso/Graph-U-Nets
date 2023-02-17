@@ -10,7 +10,7 @@ from Model.trainer import Trainer
 
 def get_args():
     parser = argparse.ArgumentParser(description='Args for graph predition')
-    parser.add_argument('-data', type=str, default='synth', help='data folder name')
+    parser.add_argument('-data', type=str, default='real', help='data folder name')
     parser.add_argument('-seed', type=int, default=1, help='seed')
     parser.add_argument('-fold', type=int, default=1, help='fold (1..10)')
     parser.add_argument('-num_epochs', type=int, default=200, help='epochs')
