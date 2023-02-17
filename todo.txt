@@ -1,0 +1,2 @@
+- validate trained network
+- print architecture

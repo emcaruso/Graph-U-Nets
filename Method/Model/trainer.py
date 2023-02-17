@@ -13,18 +13,18 @@ class LossHist:
         self.name = name
         self.path = path
 
-    def save(self):
-        with open(self.path+"/"+self.name+'.pkl', 'wb') as f:
-            pickle.dump( [self.losses_train,self.losses_val], f)
+    # def save(self):
+    #     with open(self.path+"/"+self.name+'.pkl', 'wb') as f:
+    #         pickle.dump( [self.losses_train,self.losses_val], f)
 
-    def load(self):
-        with open(self.path+"/"+self.name+'.pkl', 'rb') as f:
-            self.losses = pickle.load(f)
+    # def load(self):
+    #     with open(self.path+"/"+self.name+'.pkl', 'rb') as f:
+    #         self.losses = pickle.load(f)
 
     def plot(self):
         plt.plot(self.losses_train)
         plt.plot(self.losses_val)
-        plt.savefig(self.path+"/"+self.name+'.png')
+        plt.savefig(self.path+"/"+self.name+"_"+str(min(self.losses_train))+'.png')
 
     def append(self,loss_train, loss_val):
         self.losses_train.append(loss_train)
@@ -60,7 +60,7 @@ class Trainer:
         self.optimizer = optim.Adam(
             self.net.parameters(), lr=self.args.lr, amsgrad=True,
             # weight_decay=self.args.weight_decay)
-            weight_decay=0.0008)
+            weight_decay=0)
 
     def to_cuda(self, gs):
         if torch.cuda.is_available():
@@ -74,16 +74,30 @@ class Trainer:
 
     def run_epoch(self, epoch, data, model, optimizer):
         losses, n_samples = [], 0
-        for batch in tqdm(data, desc=str(epoch), unit='b'):
-            cur_len, gs, xs, ys = batch
-            gs, xs, ys = map(self.to_cuda, [gs, xs, ys])
-            loss = model(gs, xs, ys)
-            losses.append(loss*cur_len)
-            n_samples += cur_len
-            if optimizer is not None:
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
+
+        cur_len=1
+        gs, xs, ys = data.__getitem__(0)
+        gs, xs, ys = map(self.to_cuda, [gs, xs, ys])
+        loss = model(gs, xs, ys)
+        losses.append(loss*cur_len)
+        n_samples += cur_len
+        if optimizer is not None:
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+        avg_loss = losses[0] / 1
+        return avg_loss.item()
+
+        # for batch in tqdm(data, desc=str(epoch), unit='b'):
+        #     cur_len, gs, xs, ys = batch
+        #     gs, xs, ys = map(self.to_cuda, [gs, xs, ys])
+        #     loss = model(gs, xs, ys)
+        #     losses.append(loss*cur_len)
+        #     n_samples += cur_len
+        #     if optimizer is not None:
+        #         optimizer.zero_grad()
+        #         loss.backward()
+        #         optimizer.step()
 
         avg_loss = sum(losses) / n_samples
         return avg_loss.item()
@@ -96,8 +110,8 @@ class Trainer:
         count = 0
         for e_id in range(self.epoch,self.args.num_epochs):
             # early stopping
-            if count > 10:
-                break
+            # if count > 10:
+            #     break
             self.epoch = e_id
             self.net.train()
             loss_train = self.run_epoch(
