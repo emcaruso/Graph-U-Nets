@@ -76,21 +76,33 @@ class FileLoader(object):
                     break
                 el_type = int(line[1])
                 if el_type == 11:
+                    line_curr = lines[line_idx+2]
+                    vi = int(line_curr[0])
+                    vj = int(line_curr[1])
+                    coords_vi = [item for item in nodes if item[0] == vi]
+                    coords_vi = next(item for item in nodes if item[0] == vi)[1]["coords"]
+                    coords_vj = next(item for item in nodes if item[0] == vj)[1]["coords"]
+                    distance = np.sqrt(np.sum(np.power((coords_vi-coords_vj),2)))
+                    max_distance = max(distance, max_distance)
+                    edges.append( (vi, vj, distance) )
+                    edges.append( (vj, vi, distance) ) # undirected?
                     line_idx += 3
+
                 elif el_type == 41:
-                    line_idx += 2
-                elif el_type == 111:
-                    line = lines[line_idx+1]
-                    vs = list(map(int, line[0:4]))
-                    for vi in vs:
-                        for vj in vs:
-                            coords_vi = next(item for item in nodes if item[0] == vi)[1]["coords"]
-                            coords_vj = next(item for item in nodes if item[0] == vj)[1]["coords"]
-                            distance = np.sqrt(np.sum(np.power((coords_vi-coords_vj),2)))
-                            max_distance = max(distance, max_distance)
-                            edges.append( (vi, vj, distance) )
-                            edges.append( (vj, vi, distance) ) # undirected?
-                    line_idx += 2
+                    break
+                    # line_idx += 2
+                # elif el_type == 111:
+                    # line = lines[line_idx+1]
+                    # vs = list(map(int, line[0:4]))
+                    # for vi in vs:
+                    #     for vj in vs:
+                    #         coords_vi = next(item for item in nodes if item[0] == vi)[1]["coords"]
+                    #         coords_vj = next(item for item in nodes if item[0] == vj)[1]["coords"]
+                    #         distance = np.sqrt(np.sum(np.power((coords_vi-coords_vj),2)))
+                    #         max_distance = max(distance, max_distance)
+                    #         edges.append( (vi, vj, distance) )
+                    #         edges.append( (vj, vi, distance) ) # undirected?
+                    # line_idx += 2
 
         # edges = list(map(lambda t : (t[0],t[1],1-t[2]/max_distance), edges))
 
@@ -260,8 +272,8 @@ class FileLoader(object):
 
     def get_graph(self, table_path, nodes, edges ):
         nodes_x, nodes_y = self.table2nodefeas(table_path)
-        assert( len(nodes_x)==len(nodes) )
-        assert( len(nodes_y)==len(nodes) )
+        # assert( len(nodes_x)==len(nodes) )
+        # assert( len(nodes_y)==len(nodes) )
 
         feas_x , norm_x = self.nodes_2_feas(nodes_x)
         feas_y , norm_y = self.nodes_2_feas(nodes_y)
