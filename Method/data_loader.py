@@ -12,30 +12,77 @@ from torch_geometric.utils.convert import from_networkx
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
+class Graphs(object):
+    def __init__(self, graph_list):
+        self.graph_list = graph_list
+        self.max_x, self.max_y = self.get_maxs()
+        self.n_feas_x = self.graph_list[0].feas_x_torch.size(dim=1)
+        self.n_feas_y = self.graph_list[0].feas_y_torch.size(dim=1)
+        self.n_nodes = len(self.graph_list[0].graph.nodes)
+        self.idx_list = self.sep_data()
+
+    def get_maxs(self):
+        maxs_x = [graph.max_x for graph in self.graph_list ]
+        maxs_y = [graph.max_y for graph in self.graph_list ]
+        return max(maxs_x), max(maxs_y)
+
+    def normalize(self):
+        self.get_maxs()
+        print(f"{ self.max_x = }")
+        print(f"{ self.max_y = }")
+        for graph in self.graph_list:
+            graph.feas_x_torch = torch.mul(graph.feas_x_torch, 1.0/self.max_x)
+            graph.feas_y_torch = torch.mul(graph.feas_y_torch, 1.0/self.max_y)
+       
+    def sep_data(self, seed=0):
+        skf = StratifiedKFold(n_splits=10, shuffle=True, random_state=seed)
+        idx_list = list(skf.split(np.zeros(len(self.graph_list)), [0] * len(self.graph_list )))
+        return idx_list
+
+    def use_fold_data(self, fold_idx):
+        self.fold_idx = fold_idx+1
+        train_idx, test_idx = self.idx_list[fold_idx]
+        self.train_gs = [ self.graph_list[i] for i in train_idx]
+        self.test_gs =  [ self.graph_list[i] for i in test_idx]
+
 class Graph(object):
     def __init__(self, node_coords, edges, feas_x, feas_y):
         self.node_coords = node_coords
         self.edges = edges
         self.feas_x = feas_x
         self.feas_y = feas_y
+        self.feas_x_torch, self.max_x = self.feas_2_feastorch(feas_x)
+        self.feas_y_torch, self.max_y = self.feas_2_feastorch(feas_y)
+        
         self.graph = self.create_graph() 
         self.A = self.get_A()
 
+    
+    def graph_data(self):
+        return self.A, self.feas_x_torch.float(), self.feas_y_torch.float()
+
+
     def get_A(self):
-        Acoo = nx.to_scipy_sparse_array(graph).tocoo() 
+        Acoo = nx.to_scipy_sparse_array(self.graph).tocoo() 
         A = torch.sparse.FloatTensor(torch.LongTensor([Acoo.row.tolist(), Acoo.col.tolist()]),
                               torch.FloatTensor(Acoo.data.astype(np.float32))) 
         # A =torch.FloatTensor(nx.to_numpy_array(graph))
         return A
 
+    def feas_2_feastorch(self, feas):
+        feas_torch = [ list(item[1].values()) for item in feas]
+        feas_torch = torch.tensor(feas_torch)
+        max_val = feas_torch.max()
+        return feas_torch, max_val
+
     def create_graph(self):
-        # assert( len(nodes_x)==len(nodes) )
-        graph.add_nodes_from(nodes_x)
+        # assert( len(feas_x)==len(nodes) )
         graph = nx.Graph()
-        graph.add_nodes_from(feas_x)
+        graph.add_nodes_from(self.feas_x)
+        graph.add_weighted_edges_from(self.edges)
         return graph
 
-    def debug_mesh(self):
+    def debug(self):
         pos = {}
 
         # # show displacements
@@ -46,7 +93,7 @@ class Graph(object):
         for v in self.node_coords:
             pos[v[0]] = v[1]["coords"]
         node_xyz = np.array([ v for k,v in pos.items()])
-        edge_xyz = np.array( [ np.array([node_xyz[e[0]-1],node_xyz[e[1]-1]])  for e in graph.edges()] )
+        edge_xyz = np.array( [ np.array([node_xyz[e[0]-1],node_xyz[e[1]-1]])  for e in self.graph.edges()] )
         # Create the 3D figure
         fig = plt.figure()
         ax = fig.add_subplot(111, projection="3d")
@@ -96,14 +143,14 @@ class FileLoader(object):
                     flag = False
                     line_idx += 3
                     continue
-                nodes_x = float(lines[line_idx+1][0])
-                nodes_y = float(lines[line_idx+1][1])
+                feas_x = float(lines[line_idx+1][0])
+                feas_y = float(lines[line_idx+1][1])
                 node_z = float(lines[line_idx+1][2])
                 if node_id == -1:
                     flag = False
                     line_idx += 3
                     continue
-                nodes.append( ( node_id, { "id" : node_id, "coords": np.array([nodes_x, nodes_y, node_z])} ) )
+                nodes.append( ( node_id, { "id" : node_id, "coords": np.array([feas_x, feas_y, node_z])} ) )
                 line_idx += 2
             else:
                 # break
@@ -174,8 +221,8 @@ class FileLoader(object):
 
         feat_list = re.sub(' +', ' ', lines[0].strip()).split(" ")
         id_idx = feat_list.index('NOEUD')
-        nodes_x = []
-        nodes_y = []
+        feas_x = []
+        feas_y = []
 
         # ==== Compute features
 
@@ -184,7 +231,7 @@ class FileLoader(object):
             node_list_str = re.sub(' +', ' ', line.strip()).split(" ")
             if node_list_str[0] == "Displacements":
                 
-                nodes_x.append( 
+                feas_x.append( 
                         (
                                 int(node_list_str[id_idx][1:]),
                                 {
@@ -203,7 +250,7 @@ class FileLoader(object):
                                         #                           float(node_list_str[feat_list.index('COOR_Z')])]),
                                 }
                         ))
-                nodes_y.append(
+                feas_y.append(
                         (
                                 int(node_list_str[id_idx][1:]),
                                 {
@@ -216,91 +263,33 @@ class FileLoader(object):
 
             else:
                 if not ordered:
-                    nodes_x = sorted(nodes_x, key=lambda i: i[0])
-                    nodes_y = sorted(nodes_y, key=lambda i: i[0])
+                    feas_x = sorted(feas_x, key=lambda i: i[0])
+                    feas_y = sorted(feas_y, key=lambda i: i[0])
                     ordered = True
                     
                 id = int(node_list_str[id_idx][1:])
                 id_list = id-1
-                feature = nodes_y[id_list][1]
+                feature = feas_y[id_list][1]
                 fx = float(node_list_str[feat_list.index('FLUX')])
                 fy = float(node_list_str[feat_list.index('FLUY')])
                 fz = float(node_list_str[feat_list.index('FLUZ')])
                 feature["fluxn"] = np.sqrt(np.sum(np.power(np.array([fx,fy,fz]),2)))
 
-        return nodes_x, nodes_y
+        return feas_x, feas_y
 
-
-
-    def create_graph(self, nodes_x, edges):
-        graph = nx.Graph()
-        graph.add_nodes_from(nodes_x)
-        graph.add_weighted_edges_from(edges)
-        return graph
-        
-
-    def nodes_2_feas(self, nodes):
-        feas = [ list(item[1].values()) for item in nodes]
-        feas_tens = torch.tensor(feas)
-        max_val = feas_tens.max()
-        return feas_tens, max_val
-
-    def normalize_graphs(self, graphs):
-        print(f"{ self.max_disp = }")
-        print(f"{ self.max_flux = }")
-        for graph in graphs:
-            graph.feas_x = torch.mul(graph.feas_x, 1.0/self.max_disp)
-            graph.feas_y = torch.mul(graph.feas_y, 1.0/self.max_flux)
-        return graphs
-
-
-    def get_graph(self, table_path, nodes, edges ):
-        nodes_x, nodes_y = self.table2nodefeas(table_path)
-        # assert( len(nodes_x)==len(nodes) )
-        # assert( len(nodes_y)==len(nodes) )
-
-        feas_x , norm_x = self.nodes_2_feas(nodes_x)
-        feas_y , norm_y = self.nodes_2_feas(nodes_y)
-
-        self.max_disp=max(self.max_disp, norm_x)
-        self.max_flux=max(self.max_flux, norm_y)
-
-        graph =self.create_graph( nodes_x, edges)
-        # self.debug_mesh(graph)
-
-        graph.feas_x = feas_x
-        graph.feas_y = feas_y
-
-        # graph.A = from_networkx(graph)
-        # print(graph.A.edge_weight)
-        # print(graph.A.edge_weight())
-
-        Acoo = nx.to_scipy_sparse_array(graph).tocoo() 
-        graph.A = torch.sparse.FloatTensor(torch.LongTensor([Acoo.row.tolist(), Acoo.col.tolist()]),
-                              torch.FloatTensor(Acoo.data.astype(np.float32))) 
-
-        # graph.A =torch.FloatTensor(nx.to_numpy_array(graph))
-
-        # graph.A = from_networkx(graph)
-        # print(type(graph.A))
-        # print(graph.A)
-        # exit(1)
-        # graph.A = A + torch.eye(graph.number_of_nodes()) # self edges added
-        return graph
-
-    def get_graphs(self, nodes, edges ):
-        graphs = []
-        for table_name in tqdm(os.listdir(self.tables_dir), desc="Loading tables", unit='graphs'):
-            graph = self.get_graph(self.tables_dir+"/"+table_name, nodes, edges )
-            graphs.append(graph)
-        graphs = self.normalize_graphs(graphs)
-        return graphs
 
 
     def get_data(self):
         nodes, edges  = self.load_unv()
-        graphs = self.get_graphs( nodes, edges )
-        return G_data( graphs )
+        graph_list = []
+        for table_name in tqdm(os.listdir(self.tables_dir), desc="Loading tables", unit='graphs'):
+            feas_x, feas_y = self.table2nodefeas(self.tables_dir+"/"+table_name)
+            graph = Graph(nodes,edges,feas_x,feas_y)
+            graph_list.append(graph)
+
+        graphs = Graphs(graph_list)
+        graphs.normalize()
+        return graphs
     
 class G_data(object):
     def __init__(self, graphs):
@@ -336,8 +325,9 @@ class G_data(object):
     def use_fold_data(self, fold_idx):
         self.fold_idx = fold_idx+1
         train_idx, test_idx = self.idx_list[fold_idx]
-        self.train_gs = [ self.graphs[i] for i in train_idx]
-        self.test_gs =  [ self.graphs[i] for i in test_idx]
+        train_gs = [ self.graphs[i] for i in train_idx]
+        test_gs =  [ self.graphs[i] for i in test_idx]
+        return train_gs, test_gs
 
 class GraphData(object):
 
@@ -357,7 +347,7 @@ class GraphData(object):
 
     def __getitem__(self, idx):
         g = self.data[idx]
-        return g.A, g.feas_x.float(), g.feas_y.float()
+        return g.A, g.feas_x_torch.float(), g.feas_y_torch.float()
 
     def __iter__(self):
         return self

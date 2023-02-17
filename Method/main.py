@@ -52,12 +52,14 @@ def main():
 
     file_loader = FileLoader(geometry_path, tables_dir, args) # file loader
     data = file_loader.get_data() # graph list
+    data.graph_list[0].debug()
     for fold_idx in range(args.fold):
         print('start training ------> fold', fold_idx+1)
         data.use_fold_data(fold_idx)
         net = GNet(data.n_feas_x, data.n_feas_y, args)
         trainer = Trainer(args, net, data, checkpoint_dir)
         trainer.train()
+        net.predict(data.graph_list[0])
         break # use just 1 fold
 
 if __name__ == "__main__":

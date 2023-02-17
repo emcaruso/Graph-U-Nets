@@ -26,12 +26,25 @@ class GNet(nn.Module):
         return self.metric(hs, ys)
 
     def predict(self, graph):
-        graph_data = GraphData([graph])
-        gs, hs, _ = graph_data.__getitem__(0)
+        gs, hs, ys = graph.graph_data()
+        gs, hs, ys = map(self.to_cuda, [gs, hs, ys])
         hs = self.embed_one(gs, hs)
         return hs
 
+    def predict_and_visualize(self, graph):
+        hs = self.predict(self, graph)
+        hs = hs.cpu()
+        graph.feas_y_torch = hs
 
+    def to_cuda(self, gs):
+        if torch.cuda.is_available():
+            if type(gs) == list:
+                return [g.cuda() for g in gs]
+            return gs.cuda()
+        else:
+            print("Cuda NOT available")
+            exit(1)
+        return gs
 
     def embed(self, gs, hs, ys):
         o_hs , o_ys = [], []
