@@ -12,7 +12,63 @@ from torch_geometric.utils.convert import from_networkx
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
+class Graph(object):
+    def __init__(self, node_coords, edges, feas_x, feas_y):
+        self.node_coords = node_coords
+        self.edges = edges
+        self.feas_x = feas_x
+        self.feas_y = feas_y
+        self.graph = self.create_graph() 
+        self.A = self.get_A()
 
+    def get_A(self):
+        Acoo = nx.to_scipy_sparse_array(graph).tocoo() 
+        A = torch.sparse.FloatTensor(torch.LongTensor([Acoo.row.tolist(), Acoo.col.tolist()]),
+                              torch.FloatTensor(Acoo.data.astype(np.float32))) 
+        # A =torch.FloatTensor(nx.to_numpy_array(graph))
+        return A
+
+    def create_graph(self):
+        # assert( len(nodes_x)==len(nodes) )
+        graph.add_nodes_from(nodes_x)
+        graph = nx.Graph()
+        graph.add_nodes_from(feas_x)
+        return graph
+
+    def debug_mesh(self):
+        pos = {}
+
+        # # show displacements
+        # for v in graph.nodes.data():
+        #     pos[v[0]] = np.array([v[1]["dx"],v[1]["dy"],v[1]["dz"]])
+
+        # show coordinates
+        for v in self.node_coords:
+            pos[v[0]] = v[1]["coords"]
+        node_xyz = np.array([ v for k,v in pos.items()])
+        edge_xyz = np.array( [ np.array([node_xyz[e[0]-1],node_xyz[e[1]-1]])  for e in graph.edges()] )
+        # Create the 3D figure
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection="3d")
+        # Plot the nodes - alpha is scaled by "depth" automatically
+        ax.scatter(*node_xyz.T, s=100, ec="w")
+        # Plot the edges
+        for vizedge in edge_xyz:
+            ax.plot(*vizedge.T, color="tab:gray")
+        def _format_axes(ax):
+            """Visualization options for the 3D axes."""
+            # Turn gridlines off
+            ax.grid(False)
+            # Suppress tick labels
+            for dim in (ax.xaxis, ax.yaxis, ax.zaxis):
+                dim.set_ticks([])
+            # Set axes labels
+            ax.set_xlabel("x")
+            ax.set_ylabel("y")
+            ax.set_zlabel("z")
+        _format_axes(ax)
+        fig.tight_layout()
+        plt.show()
 
 class FileLoader(object):
     def __init__(self, unv_path, tables_dir, args):
@@ -21,25 +77,6 @@ class FileLoader(object):
         self.tables_dir = tables_dir
         self.max_disp = 0
         self.max_flux = 0
-        self.patches = []
-
-    # def get_patches(self, lines):
-        # for i in range(10):
-        #     patch_name = "patch_"+str(i)
-        #     list = [i for i, line in enumerate(lines) if patch_name in line]
-        #     idx = list[0]
-        #     j = 1
-        #     face_ids = []
-        #     node_ids = []
-        #     while True:
-        #         line = lines[idx+j]
-        #         j += 1
-        #         if int(line[0]) != 8: break
-        #         face_id = [line[1]]
-        #         if len(line)>=6: node_ids.append(int(line[5]))
-        #         line_nodes = [ for line in lines if line[0] == face_id]
-        #         node_ids+= node_ids_curr
-        #     self.patches.append(node_ids)
 
     def get_nodes_edges(self, lines):
         nodes = []
@@ -106,7 +143,6 @@ class FileLoader(object):
 
         # edges = list(map(lambda t : (t[0],t[1],1-t[2]/max_distance), edges))
 
-        # self.get_patches(lines)
 
         return nodes, edges        
 
@@ -123,48 +159,6 @@ class FileLoader(object):
 
         return nodes, edges
 
-    def debug_mesh(self, graph, nodes):
-        pos = {}
-
-        # show displacements
-        # for v in graph.nodes.data():
-        #     pos[v[0]] = np.array([v[1]["dx"],v[1]["dy"],v[1]["dz"]])
-
-        # show coordinates
-        for v in nodes:
-            pos[v[0]] = v[1]["coords"]
-
-        node_xyz = np.array([ v for k,v in pos.items()])
-        edge_xyz = np.array( [ np.array([node_xyz[e[0]-1],node_xyz[e[1]-1]])  for e in graph.edges()] )
-
-        # Create the 3D figure
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection="3d")
-
-        # Plot the nodes - alpha is scaled by "depth" automatically
-        ax.scatter(*node_xyz.T, s=100, ec="w")
-
-        # Plot the edges
-        for vizedge in edge_xyz:
-            ax.plot(*vizedge.T, color="tab:gray")
-
-
-        def _format_axes(ax):
-            """Visualization options for the 3D axes."""
-            # Turn gridlines off
-            ax.grid(False)
-            # Suppress tick labels
-            for dim in (ax.xaxis, ax.yaxis, ax.zaxis):
-                dim.set_ticks([])
-            # Set axes labels
-            ax.set_xlabel("x")
-            ax.set_ylabel("y")
-            ax.set_zlabel("z")
-
-
-        _format_axes(ax)
-        fig.tight_layout()
-        plt.show()
 
     def table2nodefeas(self, table_path):
 
@@ -234,16 +228,6 @@ class FileLoader(object):
                 fz = float(node_list_str[feat_list.index('FLUZ')])
                 feature["fluxn"] = np.sqrt(np.sum(np.power(np.array([fx,fy,fz]),2)))
 
-        # nodes_x = sorted(nodes_x, key=lambda i: i[0])
-        # nodes_y = sorted(nodes_y, key=lambda i: i[0])
-        # for id in self.patches[patch_idx]:
-        #     try:
-        #         nodes_y[id][1]["fluxn"]=fluxn_val
-        #     except:
-        #         print(id, len(nodes_y))
-        #         exit(1)
-
-
         return nodes_x, nodes_y
 
 
@@ -282,7 +266,7 @@ class FileLoader(object):
         self.max_flux=max(self.max_flux, norm_y)
 
         graph =self.create_graph( nodes_x, edges)
-        # self.debug_mesh(graph, nodes)
+        # self.debug_mesh(graph)
 
         graph.feas_x = feas_x
         graph.feas_y = feas_y

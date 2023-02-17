@@ -25,6 +25,14 @@ class GNet(nn.Module):
         hs, ys = self.embed(gs, hs, ys)
         return self.metric(hs, ys)
 
+    def predict(self, graph):
+        graph_data = GraphData([graph])
+        gs, hs, _ = graph_data.__getitem__(0)
+        hs = self.embed_one(gs, hs)
+        return hs
+
+
+
     def embed(self, gs, hs, ys):
         o_hs , o_ys = [], []
 
