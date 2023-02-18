@@ -10,11 +10,11 @@ class GNet(nn.Module):
         self.n_act = getattr(nn, args.act_n)()
         self.i_act = getattr(nn, args.act_i)()
         self.o_act = getattr(nn, args.act_o)()
-        self.i_gcn = GCN(in_dim, args.l_dim, self.i_act, args.drop_n)
+        self.i_gcn = GCN(in_dim, args.l_dim, self.i_act, args.drop_n, 1)
         self.g_unet = GraphUnet(
             args.ks, args.l_dim, args.l_dim, args.l_dim, self.n_act,
-            args.drop_n)
-        self.o_gcn = GCN(args.l_dim, out_dim, self.o_act, args.drop_n)
+            args.drop_n, args.n_gcn)
+        self.o_gcn = GCN(args.l_dim, out_dim, self.o_act, args.drop_n, 1)
         # self.o_gcn = GCN(args.l_dim, out_dim, self.n_act, args.drop_n)
         # self.out_l_1 = nn.Linear(3*args.l_dim*(args.l_num+1), args.h_dim)
         # self.out_l_2 = nn.Linear(args.h_dim, n_classes)
@@ -29,21 +29,30 @@ class GNet(nn.Module):
         gs, hs, ys = graph.graph_data()
         gs, hs, ys = map(self.to_cuda, [gs, hs, ys])
         hs = self.embed_one(gs, hs)
-        return hs
+        return hs, ys
 
     def predict_and_visualize(self, graph):
-        hs = self.predict(self, graph)
+        hs, ys = self.predict( graph)
+        loss = self.metric(hs, ys)
+        print(loss)
         hs = hs.cpu()
-        graph.feas_y_torch = hs
+        # iterate through tensor rows
+        pred_list = []
+        for row in hs.detach().numpy():
+            pred_list.append( row )
+        graph.pred_list = pred_list
+        graph.debug(groundtruth=True, show=False)
+        graph.debug(groundtruth=False, show=True)
+
 
     def to_cuda(self, gs):
         if torch.cuda.is_available():
             if type(gs) == list:
                 return [g.cuda() for g in gs]
             return gs.cuda()
-        else:
-            print("Cuda NOT available")
-            exit(1)
+        # else:
+            # print("Cuda NOT available")
+            # exit(1)
         return gs
 
     def embed(self, gs, hs, ys):
@@ -53,21 +62,21 @@ class GNet(nn.Module):
         o_hs.append(hs)
         o_ys.append(ys)
 
-        # for g, h, y in zip(gs, hs, ys):
-        #     h = self.embed_one(g, h)
-        #     o_hs.append(h)
-        #     o_ys.append(y)
+#         for g, h, y in zip(gs, hs, ys):
+#             h = self.embed_one(g, h)
+#             o_hs.append(h)
+#             o_ys.append(y)
 
         hs = torch.stack(o_hs, 0)
         ys = torch.stack(o_ys, 0)
         return hs, ys
 
     def embed_one(self, g, h):
-        # print(type(g))
+        # print(type(g))s
         # print(g.size())
         g = norm_g(g)
         h = self.i_gcn(g, h)
-        hs = self.g_unet(g, h)
+        h = self.g_unet(g, h)
         h = self.o_gcn(g, h)
         return h
 

@@ -5,18 +5,18 @@ import numpy as np
 
 class GraphUnet(nn.Module):
 
-    def __init__(self, ks, in_dim, out_dim, dim, act, drop_p):
+    def __init__(self, ks, in_dim, out_dim, dim, act, drop_p, n_gcn):
         super(GraphUnet, self).__init__()
         self.ks = ks
-        self.bottom_gcn = GCN(dim, dim, act, drop_p)
+        self.bottom_gcn = GCN(dim, dim, act, drop_p, n_gcn)
         self.down_gcns = nn.ModuleList()
         self.up_gcns = nn.ModuleList()
         self.pools = nn.ModuleList()
         self.unpools = nn.ModuleList()
         self.l_n = len(ks)
         for i in range(self.l_n):
-            self.down_gcns.append(GCN(dim, dim, act, drop_p))
-            self.up_gcns.append(GCN(dim, dim, act, drop_p))
+            self.down_gcns.append(GCN(dim, dim, act, drop_p, n_gcn))
+            self.up_gcns.append(GCN(dim, dim, act, drop_p, n_gcn))
             self.pools.append(Pool(ks[i], dim, drop_p))
             self.unpools.append(Unpool(dim, dim, drop_p))
 
@@ -37,27 +37,34 @@ class GraphUnet(nn.Module):
             up_idx = self.l_n - i - 1
             g, idx = adj_ms[up_idx], indices_list[up_idx]
             g, h = self.unpools[i](g, h, down_outs[up_idx], idx)
-            h = self.up_gcns[i](g, h)
             h = h.add(down_outs[up_idx])
-            hs.append(h)
+            h = self.up_gcns[i](g, h)
+            # h = h.add(down_outs[up_idx])
+            # hs.append(h)
         h = h.add(org_h)
-        hs.append(h)
-        return hs
+        # hs.append(h)
+        # return hs
+        return h
 
 
 class GCN(nn.Module):
 
-    def __init__(self, in_dim, out_dim, act, p):
+    def __init__(self, in_dim, out_dim, act, p, n_gcn):
         super(GCN, self).__init__()
-        self.proj = nn.Linear(in_dim, out_dim)
+        self.projs = nn.ModuleList()
         self.act = act
-        self.drop = nn.Dropout(p=p) if p > 0.0 else nn.Identity()
+        self.drops = nn.ModuleList()
+        self.n_gcn = n_gcn
+        for i in range(n_gcn):
+            self.projs.append(nn.Linear(in_dim, out_dim))
+            self.drops.append( nn.Dropout(p=p) if p > 0.0 else nn.Identity())
 
     def forward(self, g, h):
-        h = self.drop(h)
-        h = torch.matmul(g, h)
-        h = self.proj(h)
-        h = self.act(h)
+        for i in range(self.n_gcn):
+            h = self.drops[i](h)
+            h = torch.matmul(g, h)
+            h = self.projs[i](h)
+            h = self.act(h)
         return h
 
 

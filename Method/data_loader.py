@@ -46,7 +46,8 @@ class Graphs(object):
         self.test_gs =  [ self.graph_list[i] for i in test_idx]
 
 class Graph(object):
-    def __init__(self, node_coords, edges, feas_x, feas_y):
+    def __init__(self, node_coords, edges, feas_x, feas_y, name):
+        self.name = name
         self.node_coords = node_coords
         self.edges = edges
         self.feas_x = feas_x
@@ -56,6 +57,7 @@ class Graph(object):
         
         self.graph = self.create_graph() 
         self.A = self.get_A()
+        self.pred_list = None
 
     
     def graph_data(self):
@@ -82,23 +84,33 @@ class Graph(object):
         graph.add_weighted_edges_from(self.edges)
         return graph
 
-    def debug(self):
+    def debug(self, groundtruth=True, show_edges=False, show=True):
         pos = {}
 
         # # show displacements
         # for v in graph.nodes.data():
         #     pos[v[0]] = np.array([v[1]["dx"],v[1]["dy"],v[1]["dz"]])
 
-        # show coordinates
-        for v in self.node_coords:
-            pos[v[0]] = v[1]["coords"]
-        node_xyz = np.array([ v for k,v in pos.items()])
-        edge_xyz = np.array( [ np.array([node_xyz[e[0]-1],node_xyz[e[1]-1]])  for e in self.graph.edges()] )
+        # coordinates
+        pos = [ coord[1]["coords"] for coord in self.node_coords if coord[0] in list(map(lambda x : x[0], self.feas_x)) ]
+
+        color_map = []
+        if groundtruth:
+            color_map = [ y[1]["fluxn"] for y in self.feas_y ]
+        else:
+            assert self.pred_list is not None
+            color_map = [ pred for pred in self.pred_list ]
+
+        node_xyz = np.array([ v for v in pos])
+        if show_edges:
+            edge_xyz = np.array( [ np.array([node_xyz[e[0]-1],node_xyz[e[1]-1]])  for e in self.graph.edges()] )
+        else:
+            edge_xyz = np.array( [])
         # Create the 3D figure
         fig = plt.figure()
         ax = fig.add_subplot(111, projection="3d")
         # Plot the nodes - alpha is scaled by "depth" automatically
-        ax.scatter(*node_xyz.T, s=100, ec="w")
+        ax.scatter(*node_xyz.T, s=100, ec="w", c=color_map)
         # Plot the edges
         for vizedge in edge_xyz:
             ax.plot(*vizedge.T, color="tab:gray")
@@ -115,7 +127,10 @@ class Graph(object):
             ax.set_zlabel("z")
         _format_axes(ax)
         fig.tight_layout()
-        plt.show()
+        plt.title(self.name)
+
+        if(show):
+            plt.show()
 
 class FileLoader(object):
     def __init__(self, unv_path, tables_dir, args):
@@ -151,6 +166,7 @@ class FileLoader(object):
                     line_idx += 3
                     continue
                 nodes.append( ( node_id, { "id" : node_id, "coords": np.array([feas_x, feas_y, node_z])} ) )
+                # edges.append( (node_id, node_id, 1) )
                 line_idx += 2
             else:
                 # break
@@ -168,8 +184,12 @@ class FileLoader(object):
                     coords_vj = next(item for item in nodes if item[0] == vj)[1]["coords"]
                     distance = np.sqrt(np.sum(np.power((coords_vi-coords_vj),2)))
                     max_distance = max(distance, max_distance)
+                    # edges.append( (vi, vj, distance) )
+                    # edges.append( (vj, vi, distance) ) # undirected?
                     edges.append( (vi, vj, distance) )
                     edges.append( (vj, vi, distance) ) # undirected?
+                    edges.append( (vi, vi, 0) )
+                    edges.append( (vj, vj, 0) )
                     line_idx += 3
 
                 elif el_type == 41:
@@ -189,6 +209,7 @@ class FileLoader(object):
                     # line_idx += 2
 
         # edges = list(map(lambda t : (t[0],t[1],1-t[2]/max_distance), edges))
+        edges = [ (e[0],e[1],1-(e[2]/max_distance)) for e in edges ]
 
 
         return nodes, edges        
@@ -284,50 +305,50 @@ class FileLoader(object):
         graph_list = []
         for table_name in tqdm(os.listdir(self.tables_dir), desc="Loading tables", unit='graphs'):
             feas_x, feas_y = self.table2nodefeas(self.tables_dir+"/"+table_name)
-            graph = Graph(nodes,edges,feas_x,feas_y)
+            graph = Graph(nodes,edges,feas_x,feas_y, table_name)
             graph_list.append(graph)
 
         graphs = Graphs(graph_list)
         graphs.normalize()
         return graphs
     
-class G_data(object):
-    def __init__(self, graphs):
-        self.graphs = graphs
-        self.sep_data()
-        self.n_nodes = self.get_n_nodes()
-        self.n_feas_x = self.get_n_feas_x()
-        self.n_feas_y = self.get_n_feas_y()
+# class G_data(object):
+#     def __init__(self, graphs):
+#         self.graphs = graphs
+#         self.sep_data()
+#         self.n_nodes = self.get_n_nodes()
+#         self.n_feas_x = self.get_n_feas_x()
+#         self.n_feas_y = self.get_n_feas_y()
 
-    def get_n_nodes(self):
-        n_nodes = len(self.graphs[0].nodes)
-        for g in self.graphs:
-            assert(len(g.nodes)==n_nodes)
-        return n_nodes
+#     def get_n_nodes(self):
+#         n_nodes = len(self.graphs[0].nodes)
+#         for g in self.graphs:
+#             assert(len(g.nodes)==n_nodes)
+#         return n_nodes
 
-    def get_n_feas_x(self):
-        n_features = self.graphs[0].feas_x.size(dim=1)
-        for g in self.graphs:
-            assert(g.feas_x.size(dim=1)==n_features)
-        return n_features
+#     def get_n_feas_x(self):
+#         n_features = self.graphs[0].feas_x.size(dim=1)
+#         for g in self.graphs:
+#             assert(g.feas_x.size(dim=1)==n_features)
+#         return n_features
 
-    def get_n_feas_y(self):
-        n_features = self.graphs[0].feas_y.size(dim=1)
-        for g in self.graphs:
-            assert(g.feas_y.size(dim=1)==n_features)
-        return n_features
+#     def get_n_feas_y(self):
+#         n_features = self.graphs[0].feas_y.size(dim=1)
+#         for g in self.graphs:
+#             assert(g.feas_y.size(dim=1)==n_features)
+#         return n_features
 
-    def sep_data(self, seed=0):
-        skf = StratifiedKFold(n_splits=10, shuffle=True, random_state=seed)
-        labels = [0] * len(self.graphs)
-        self.idx_list = list(skf.split(np.zeros(len(labels)), labels))
+#     def sep_data(self, seed=0):
+#         skf = StratifiedKFold(n_splits=10, shuffle=True, random_state=seed)
+#         labels = [0] * len(self.graphs)
+#         self.idx_list = list(skf.split(np.zeros(len(labels)), labels))
 
-    def use_fold_data(self, fold_idx):
-        self.fold_idx = fold_idx+1
-        train_idx, test_idx = self.idx_list[fold_idx]
-        train_gs = [ self.graphs[i] for i in train_idx]
-        test_gs =  [ self.graphs[i] for i in test_idx]
-        return train_gs, test_gs
+#     def use_fold_data(self, fold_idx):
+#         self.fold_idx = fold_idx+1
+#         train_idx, test_idx = self.idx_list[fold_idx]
+#         train_gs = [ self.graphs[i] for i in train_idx]
+#         test_gs =  [ self.graphs[i] for i in test_idx]
+#         return train_gs, test_gs
 
 class GraphData(object):
 

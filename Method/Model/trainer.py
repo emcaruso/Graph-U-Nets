@@ -61,15 +61,16 @@ class Trainer:
             self.net.parameters(), lr=self.args.lr, amsgrad=True,
             # weight_decay=self.args.weight_decay)
             weight_decay=0)
+        # self.optimizer = optim.SGD(self.net.parameters(), lr=self.args.lr, momentum=0.9)
 
     def to_cuda(self, gs):
         if torch.cuda.is_available():
             if type(gs) == list:
                 return [g.cuda() for g in gs]
             return gs.cuda()
-        else:
-            print("Cuda NOT available")
-            exit(1)
+        # else:
+        #     print("Cuda NOT available")
+            # exit(1)
         return gs
 
     def run_epoch(self, epoch, data, model, optimizer):
@@ -104,7 +105,7 @@ class Trainer:
 
     def train(self):
         train_str = 'Train epoch %d: loss %.5f'
-        test_str = 'Test epoch %d: loss %.5f'
+        test_str =  'Test  epoch %d: loss %.5f'
         line_str = '%d:\t%.5f\n'
         losses = []
         count = 0
