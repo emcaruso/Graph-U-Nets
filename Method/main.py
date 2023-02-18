@@ -30,7 +30,7 @@ def get_args():
     parser.add_argument('-act_n', type=str, default='ELU', help='network act output')
     # parser.add_argument('weight_decay', type=float, default=0.0008, help='weight decay')
     # parser.add_argument('-act_c', type=str, default='ELU', help='output act')
-    parser.add_argument('-ks', nargs='+', default=[0.5,0.25,0.125,0.06,0.03])
+    parser.add_argument('-ks', nargs='+', default=[0.5,0.25,0.125,0.06,0.03, 0.001])
     # parser.add_argument('-acc_file', type=str, default='re', help='acc file')
     args, _ = parser.parse_known_args()
     return args
@@ -64,7 +64,7 @@ def main():
         # summary(net, GraphData(data.train_gs).loader(trainer.args.batch, True)  )
         # print(net)
         trainer.train()
-        net.predict_and_visualize(data.train_gs[0])
+        # net.predict_and_visualize(data.train_gs[0])
         break # use just 1 fold
 
 if __name__ == "__main__":

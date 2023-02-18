@@ -58,14 +58,14 @@ class GNet(nn.Module):
     def embed(self, gs, hs, ys):
         o_hs , o_ys = [], []
 
-        hs = self.embed_one(gs, hs)
-        o_hs.append(hs)
-        o_ys.append(ys)
+        # hs = self.embed_one(gs, hs)
+        # o_hs.append(hs)
+        # o_ys.append(ys)
 
-#         for g, h, y in zip(gs, hs, ys):
-#             h = self.embed_one(g, h)
-#             o_hs.append(h)
-#             o_ys.append(y)
+        for g, h, y in zip(gs, hs, ys):
+            h = self.embed_one(g, h)
+            o_hs.append(h)
+            o_ys.append(y)
 
         hs = torch.stack(o_hs, 0)
         ys = torch.stack(o_ys, 0)

@@ -76,29 +76,29 @@ class Trainer:
     def run_epoch(self, epoch, data, model, optimizer):
         losses, n_samples = [], 0
 
-        cur_len=1
-        gs, xs, ys = data.__getitem__(0)
-        gs, xs, ys = map(self.to_cuda, [gs, xs, ys])
-        loss = model(gs, xs, ys)
-        losses.append(loss*cur_len)
-        n_samples += cur_len
-        if optimizer is not None:
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-        avg_loss = losses[0] / 1
-        return avg_loss.item()
+        # cur_len=1
+        # gs, xs, ys = data.__getitem__(0)
+        # gs, xs, ys = map(self.to_cuda, [gs, xs, ys])
+        # loss = model(gs, xs, ys)
+        # losses.append(loss*cur_len)
+        # n_samples += cur_len
+        # if optimizer is not None:
+        #     optimizer.zero_grad()
+        #     loss.backward()
+        #     optimizer.step()
+        # avg_loss = losses[0] / 1
+        # return avg_loss.item()
 
-        # for batch in tqdm(data, desc=str(epoch), unit='b'):
-        #     cur_len, gs, xs, ys = batch
-        #     gs, xs, ys = map(self.to_cuda, [gs, xs, ys])
-        #     loss = model(gs, xs, ys)
-        #     losses.append(loss*cur_len)
-        #     n_samples += cur_len
-        #     if optimizer is not None:
-        #         optimizer.zero_grad()
-        #         loss.backward()
-        #         optimizer.step()
+        for batch in tqdm(data, desc=str(epoch), unit='b'):
+            cur_len, gs, xs, ys = batch
+            gs, xs, ys = map(self.to_cuda, [gs, xs, ys])
+            loss = model(gs, xs, ys)
+            losses.append(loss*cur_len)
+            n_samples += cur_len
+            if optimizer is not None:
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
 
         avg_loss = sum(losses) / n_samples
         return avg_loss.item()
