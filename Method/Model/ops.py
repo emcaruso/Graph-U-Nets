@@ -55,12 +55,12 @@ class GCN(nn.Module):
         self.act = act
         self.drops = nn.ModuleList()
         self.n_gcn = n_gcn
-        for i in range(n_gcn):
+        for i in range(int(n_gcn)):
             self.projs.append(nn.Linear(in_dim, out_dim))
             self.drops.append( nn.Dropout(p=p) if p > 0.0 else nn.Identity())
 
     def forward(self, g, h):
-        for i in range(self.n_gcn):
+        for i in range(int(self.n_gcn)):
             h = self.drops[i](h)
             h = torch.matmul(g, h)
             h = self.projs[i](h)
