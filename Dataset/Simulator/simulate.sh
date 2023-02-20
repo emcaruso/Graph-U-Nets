@@ -6,9 +6,9 @@ COMMFILE=${SIMULATIONDIR}"RunCase_1_Stage_3.comm"
 
 ############ CHOOSE DATASET #############
 
-#DATA="synth_vol"
+DATA="synth_vol"
 #DATA="synth"
-DATA="real_vol"
+#DATA="real_vol"
 #DATA="real"
 
 #########################################

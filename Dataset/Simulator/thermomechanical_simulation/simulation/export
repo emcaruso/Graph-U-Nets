@@ -17,9 +17,9 @@ P version 15.4
 A memjeveux 256.0
 A tpmax 1800.0
 F comm /home/manu/Desktop/cj_gunet/Dataset/Simulator/thermomechanical_simulation/simulation/RunCase_1_Stage_3.comm D  1
-F libr /home/manu/Desktop/cj_gunet/Dataset/Data/real_vol/real_vol.med D  20
-F libr /home/manu/Desktop/cj_gunet/Dataset/Data/real_vol/med_results/thrm_500000,patch_9.med R  3
-F libr /home/manu/Desktop/cj_gunet/Dataset/Data/real_vol/med_results/meca_500000,patch_9.med R  2
-F libr /home/manu/Desktop/cj_gunet/Dataset/Data/real_vol/table_results/500000,patch_9.txt R  8
+F libr /home/manu/Desktop/cj_gunet/Dataset/Data/synth_vol/synth_vol.med  D  20
+F libr /home/manu/Desktop/cj_gunet/Dataset/Data/synth_vol/med_results/thrm_500000,patch_1.med  R  3
+F libr /home/manu/Desktop/cj_gunet/Dataset/Data/synth_vol/med_results/meca_500000,patch_1.med  R  2
+F libr /home/manu/Desktop/cj_gunet/Dataset/Data/synth_vol/table_results/500000,patch_1.txt R  8
 F mess /home/manu/Desktop/cj_gunet/Dataset/Simulator/thermomechanical_simulation/simulation/message R  6
 R base /home/manu/Desktop/cj_gunet/Dataset/Simulator/thermomechanical_simulation/simulation/base-stage3 R  0
