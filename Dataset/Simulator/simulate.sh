@@ -6,7 +6,9 @@ COMMFILE=${SIMULATIONDIR}"RunCase_1_Stage_3.comm"
 
 ############ CHOOSE DATASET #############
 
-DATA="synth"
+#DATA="synth_vol"
+#DATA="synth"
+DATA="real_vol"
 #DATA="real"
 
 #########################################
@@ -17,7 +19,8 @@ MODELSDIR="$(echo $MODELSDIR | realpath -s ${MODELSDIR})"
 MODELSDIR="$(echo $MODELSDIR | sed 's/\//\\\//g')"
 
 list_patches="patch_0 patch_1 patch_2 patch_3 patch_4 patch_5 patch_6 patch_7 patch_8 patch_9"
-list_fluxes='100000 300000 500000'
+#list_fluxes='100000 300000 500000'
+list_fluxes='500000'
 
 
 
