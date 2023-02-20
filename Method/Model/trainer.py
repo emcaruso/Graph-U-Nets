@@ -40,7 +40,8 @@ class Trainer:
         self.init(args, G_data.train_gs, G_data.test_gs)
         self.epoch = 0
         self.best_loss = 10000000000
-        self.args_name = {k:vars(args)[k] for k in ('batch','lr','l_dim','drop_n','act_i','act_n') if k in vars(args)}
+        # self.args_name = {k:vars(args)[k] for k in ('batch','lr','l_dim','drop_n','act_i','act_n') if k in vars(args)}
+        self.args_name = {k:vars(args)[k] for k in ('batch','l_dim','n_gcn') if k in vars(args)}
         self.args_name = str(self.args_name)[2:-1]
         # self.checkpoint_dir = checkpoint_dir+"/"+str(self.args_name)[2:-1]
         self.checkpoint_dir = checkpoint_dir
@@ -59,13 +60,13 @@ class Trainer:
         self.test_d = test_data.loader(self.args.batch, False)
         self.optimizer = optim.Adam(
             self.net.parameters(), lr=self.args.lr, amsgrad=True,
-            # weight_decay=self.args.weight_decay)
-            weight_decay=0)
+            weight_decay=self.args.weight_decay)
+            # weight_decay=0.0008)
         # self.optimizer = optim.SGD(self.net.parameters(), lr=self.args.lr, momentum=0.9)
 
     def to_cuda(self, gs):
         if torch.cuda.is_available():
-            if type(gs) == list:
+            if type(gs):
                 return [g.cuda() for g in gs]
             return gs.cuda()
         # else:
@@ -99,7 +100,6 @@ class Trainer:
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
-
         avg_loss = sum(losses) / n_samples
         return avg_loss.item()
 
@@ -111,7 +111,7 @@ class Trainer:
         count = 0
         for e_id in range(self.epoch,self.args.num_epochs):
             # early stopping
-            # if count > 10:
+            # if count > 100:
             #     break
             self.epoch = e_id
             self.net.train()
@@ -130,8 +130,9 @@ class Trainer:
 
             # save best model
             count += 1
-            if self.best_loss>loss_val:
+            if self.best_loss > loss_val :
                 self.save_last_model(loss_val, self.checkpoint_dir+"/best_models/"+self.args_name)
+                self.best_loss = loss_val
                 count = 0
 
             # self.loss_hist.save()

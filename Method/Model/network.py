@@ -76,7 +76,7 @@ class GNet(nn.Module):
         # print(g.size())
         g = norm_g(g)
         h = self.i_gcn(g, h)
-        h = self.g_unet(g, h)
+        h, hs = self.g_unet(g, h)
         h = self.o_gcn(g, h)
         return h
 

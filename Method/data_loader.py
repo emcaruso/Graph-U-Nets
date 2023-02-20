@@ -13,7 +13,8 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 class Graphs(object):
-    def __init__(self, graph_list):
+    def __init__(self, graph_list, n_train_sampl):
+        self.n_train_sampl = n_train_sampl
         self.graph_list = graph_list
         self.max_x, self.max_y = self.get_maxs()
         self.n_feas_x = self.graph_list[0].feas_x_torch.size(dim=1)
@@ -42,8 +43,11 @@ class Graphs(object):
     def use_fold_data(self, fold_idx):
         self.fold_idx = fold_idx+1
         train_idx, test_idx = self.idx_list[fold_idx]
-        self.train_gs = [ self.graph_list[i] for i in train_idx]
         self.test_gs =  [ self.graph_list[i] for i in test_idx]
+        self.train_gs = [ self.graph_list[i] for i in train_idx]
+        if self.n_train_sampl > 0:
+            self.train_gs = self.train_gs[:self.n_train_sampl]
+
 
 class Graph(object):
     def __init__(self, node_coords, edges, feas_x, feas_y, name):
@@ -308,7 +312,7 @@ class FileLoader(object):
             graph = Graph(nodes,edges,feas_x,feas_y, table_name)
             graph_list.append(graph)
 
-        graphs = Graphs(graph_list)
+        graphs = Graphs(graph_list, self.args.n_train_sampl)
         graphs.normalize()
         return graphs
     

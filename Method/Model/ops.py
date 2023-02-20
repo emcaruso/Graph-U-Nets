@@ -37,14 +37,14 @@ class GraphUnet(nn.Module):
             up_idx = self.l_n - i - 1
             g, idx = adj_ms[up_idx], indices_list[up_idx]
             g, h = self.unpools[i](g, h, down_outs[up_idx], idx)
-            h = h.add(down_outs[up_idx])
-            h = self.up_gcns[i](g, h)
             # h = h.add(down_outs[up_idx])
-            # hs.append(h)
+            h = self.up_gcns[i](g, h)
+            h = h.add(down_outs[up_idx])
+            hs.append(h)
         h = h.add(org_h)
-        # hs.append(h)
+        hs.append(h)
         # return hs
-        return h
+        return h, hs
 
 
 class GCN(nn.Module):
@@ -92,6 +92,7 @@ class Unpool(nn.Module):
     def forward(self, g, h, pre_h, idx):
         new_h = h.new_zeros([g.shape[0], h.shape[1]])
         new_h[idx] = h
+        # exit()
         return g, new_h
 
 
