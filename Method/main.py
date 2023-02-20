@@ -15,7 +15,7 @@ def get_args():
     parser.add_argument('-data', type=str, default='synth', help='data folder name')
     parser.add_argument('-seed', type=int, default=1, help='seed')
     parser.add_argument('-fold', type=int, default=1, help='fold (1..10)')
-    parser.add_argument('-num_epochs', type=int, default=3000, help='epochs')
+    parser.add_argument('-num_epochs', type=int, default=30000, help='epochs')
     parser.add_argument('-batch', type=int, default=1, help='batch size')
     parser.add_argument('-lr', type=float, default=0.001, help='learning rate')
     parser.add_argument('-n_gcn', type=float, default=3, help='number of gcns')
@@ -30,7 +30,7 @@ def get_args():
     parser.add_argument('-act_o', type=str, default='ELU', help='network act hidden')
     parser.add_argument('-act_n', type=str, default='ELU', help='network act output')
     # parser.add_argument('-weight_decay', type=float, default=0.0008, help='weight decay')
-    parser.add_argument('-weight_decay', type=float, default=0.00001, help='weight decay')
+    parser.add_argument('-weight_decay', type=float, default=0.000001, help='weight decay')
     # parser.add_argument('-act_c', type=str, default='ELU', help='output act')
     parser.add_argument('-ks', nargs='+', default=[0.5,0.25,0.125,0.06,0.03, 0.015, 0.0075])
     # parser.add_argument('-acc_file', type=str, default='re', help='acc file')
@@ -66,7 +66,8 @@ def main():
         # summary(net, GraphData(data.train_gs).loader(trainer.args.batch, True)  )
         # print(net)
         trainer.train()
-        net.predict_and_visualize(data.train_gs[0])
+        for data in data.train_gs:
+            net.predict_and_visualize(data)
         break # use just 1 fold
 
 if __name__ == "__main__": main()
