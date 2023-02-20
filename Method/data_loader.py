@@ -179,28 +179,29 @@ class FileLoader(object):
                 if line[0]=='-1':
                     break
                 el_type = int(line[1])
-                if el_type == 11 and volume_flag:
-                    line_curr = lines[line_idx+2]
-                    vi = int(line_curr[0])
-                    vj = int(line_curr[1])
-                    coords_vi = [item for item in nodes if item[0] == vi]
-                    coords_vi = next(item for item in nodes if item[0] == vi)[1]["coords"]
-                    coords_vj = next(item for item in nodes if item[0] == vj)[1]["coords"]
-                    distance = np.sqrt(np.sum(np.power((coords_vi-coords_vj),2)))
-                    max_distance = max(distance, max_distance)
-                    # edges.append( (vi, vj, distance) )
-                    # edges.append( (vj, vi, distance) ) # undirected?
-                    edges.append( (vi, vj, distance) )
-                    edges.append( (vj, vi, distance) ) # undirected?
-                    edges.append( (vi, vi, 0) )
-                    edges.append( (vj, vj, 0) )
+                if el_type == 11:
+                    if not volume_flag:
+                        line_curr = lines[line_idx+2]
+                        vi = int(line_curr[0])
+                        vj = int(line_curr[1])
+                        coords_vi = [item for item in nodes if item[0] == vi]
+                        coords_vi = next(item for item in nodes if item[0] == vi)[1]["coords"]
+                        coords_vj = next(item for item in nodes if item[0] == vj)[1]["coords"]
+                        distance = np.sqrt(np.sum(np.power((coords_vi-coords_vj),2)))
+                        max_distance = max(distance, max_distance)
+                        # edges.append( (vi, vj, distance) )
+                        # edges.append( (vj, vi, distance) ) # undirected?
+                        edges.append( (vi, vj, distance) )
+                        edges.append( (vj, vi, distance) ) # undirected?
+                        edges.append( (vi, vi, 0) )
+                        edges.append( (vj, vj, 0) )
                     line_idx += 3
 
                 elif el_type == 41:
-                    if volume_flag:
+                    if not volume_flag:
                         break
                     line_idx += 2
-                elif el_type == 111:
+                elif el_type == 111 and volume_flag:
                     line = lines[line_idx+1]
                     vs = list(map(int, line[0:4]))
                     for vi in vs:
@@ -212,6 +213,9 @@ class FileLoader(object):
                             edges.append( (vi, vj, distance) )
                             edges.append( (vj, vi, distance) ) # undirected?
                     line_idx += 2
+                else:
+
+                    break
 
         # edges = list(map(lambda t : (t[0],t[1],1-t[2]/max_distance), edges))
         edges = [ (e[0],e[1],1-(e[2]/max_distance)) for e in edges ]
@@ -229,9 +233,8 @@ class FileLoader(object):
             lines = f.readlines()
 
         volume_name = self.unv_path.split("/")[-2][-4:]
-        print(volume_name)
-        volume_flag = volume_name is ["_vol"] 
-        nodes, edges  = self.get_nodes_edges(lines)
+        volume_flag = volume_name == "_vol"
+        nodes, edges  = self.get_nodes_edges(lines, volume_flag)
 
         return nodes, edges
 
