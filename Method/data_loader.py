@@ -69,6 +69,7 @@ class Graph(object):
 
 
     def get_A(self):
+        
         Acoo = nx.to_scipy_sparse_array(self.graph).tocoo() 
         A = torch.sparse.FloatTensor(torch.LongTensor([Acoo.row.tolist(), Acoo.col.tolist()]),
                               torch.FloatTensor(Acoo.data.astype(np.float32))) 
@@ -84,6 +85,7 @@ class Graph(object):
     def create_graph(self):
         # assert( len(feas_x)==len(nodes) )
         graph = nx.Graph()
+        nx.write_gexf(graph,"/home/emanuelecaruso/Desktop/toyproblem_2/real_graph.gexf")
         graph.add_nodes_from(self.feas_x)
         graph.add_weighted_edges_from(self.edges)
         return graph
@@ -100,7 +102,7 @@ class Graph(object):
 
         color_map = []
         if groundtruth:
-            color_map = [ y[1]["fluxn"] for y in self.feas_y ]
+            color_map = [ y[1]["temp"] for y in self.feas_y ]
         else:
             assert self.pred_list is not None
             color_map = [ pred for pred in self.pred_list ]
@@ -114,7 +116,7 @@ class Graph(object):
         fig = plt.figure()
         ax = fig.add_subplot(111, projection="3d")
         # Plot the nodes - alpha is scaled by "depth" automatically
-        ax.scatter(*node_xyz.T, s=100, ec="w", c=color_map)
+        ax.scatter(*node_xyz.T, s=20, ec="w", c=color_map)
         # Plot the edges
         for vizedge in edge_xyz:
             ax.plot(*vizedge.T, color="tab:gray")
@@ -153,6 +155,8 @@ class FileLoader(object):
 
         lines= [ re.sub(' +', ' ', line.strip()).split(" ") for line in lines ]
         
+        max_node_edge = 0
+
         while True:
             if flag:
                 line = lines[line_idx]
@@ -166,6 +170,7 @@ class FileLoader(object):
                 feas_y = float(lines[line_idx+1][1])
                 node_z = float(lines[line_idx+1][2])
                 if node_id == -1:
+                    nodes = sorted(nodes, key=lambda i: i[0])
                     flag = False
                     line_idx += 3
                     continue
@@ -180,26 +185,44 @@ class FileLoader(object):
                     break
                 el_type = int(line[1])
                 if el_type == 11:
-                    if not volume_flag:
-                        line_curr = lines[line_idx+2]
-                        vi = int(line_curr[0])
-                        vj = int(line_curr[1])
-                        coords_vi = [item for item in nodes if item[0] == vi]
-                        coords_vi = next(item for item in nodes if item[0] == vi)[1]["coords"]
-                        coords_vj = next(item for item in nodes if item[0] == vj)[1]["coords"]
-                        distance = np.sqrt(np.sum(np.power((coords_vi-coords_vj),2)))
-                        max_distance = max(distance, max_distance)
-                        # edges.append( (vi, vj, distance) )
-                        # edges.append( (vj, vi, distance) ) # undirected?
-                        edges.append( (vi, vj, distance) )
-                        edges.append( (vj, vi, distance) ) # undirected?
-                        edges.append( (vi, vi, 0) )
-                        edges.append( (vj, vj, 0) )
+                    # if not volume_flag:
+                    #     line_curr = lines[line_idx+2]
+                    #     vi = int(line_curr[0])
+                    #     vj = int(line_curr[1])
+                    #     max_node_edge = max(max_node_edge,vi)
+                    #     max_node_edge = max(max_node_edge,vj)
+                    #     coords_vi = [item for item in nodes if item[0] == vi]
+                    #     coords_vi = next(item for item in nodes if item[0] == vi)[1]["coords"]
+                    #     coords_vj = next(item for item in nodes if item[0] == vj)[1]["coords"]
+                    #     distance = np.sqrt(np.sum(np.power((coords_vi-coords_vj),2)))
+                    #     max_distance = max(distance, max_distance)
+                    #     # edges.append( (vi, vj, distance) )
+                    #     # edges.append( (vj, vi, distance) ) # undirected?
+                    #     edges.append( (vi, vj, 1) )
+                    #     edges.append( (vj, vi, 1) ) # undirected?
+                    #     edges.append( (vi, vi, 1) )
+                    #     edges.append( (vj, vj, 1) )
+                    #     # edges.append( (vi, vj, distance) )
+                    #     # edges.append( (vj, vi, distance) ) # undirected?
+                    #     # edges.append( (vi, vi, 0) )
+                    #     # edges.append( (vj, vj, 0) )
                     line_idx += 3
 
-                elif el_type == 41:
-                    if not volume_flag:
-                        break
+                elif el_type == 41 and not volume_flag:
+                    line = lines[line_idx+1]
+                    vs = list(map(int, line[0:3]))
+                    for vi in vs:
+                        edges.append( (vi, vi, 1) )
+                        for vj in vs:
+                            coords_vi = next(item for item in nodes if item[0] == vi)[1]["coords"]
+                            coords_vj = next(item for item in nodes if item[0] == vj)[1]["coords"]
+                            distance = np.sqrt(np.sum(np.power((coords_vi-coords_vj),2)))
+                            max_distance = max(distance, max_distance)
+                            # edges.append( (vi, vj, distance) )
+                            # edges.append( (vj, vi, distance) ) # undirected?
+                            # edges.append( (vi, vi, distance) )
+                            # edges.append( (vj, vj, distance) ) # undirected?
+                            edges.append( (vi, vj, 1) )
                     line_idx += 2
                 elif el_type == 111 and volume_flag:
                     line = lines[line_idx+1]
@@ -218,7 +241,7 @@ class FileLoader(object):
                     break
 
         # edges = list(map(lambda t : (t[0],t[1],1-t[2]/max_distance), edges))
-        edges = [ (e[0],e[1],1-(e[2]/max_distance)) for e in edges ]
+        # edges = [ (e[0],e[1],1-(e[2]/max_distance)) for e in edges ]
 
 
         return nodes, edges        
@@ -287,7 +310,7 @@ class FileLoader(object):
                                 int(node_list_str[id_idx][1:]),
                                 {
                                         # "id" : int(node_list_str[id_idx][1:]),
-                                        # "fluxn" : 0.0
+                                        # "temp" : 0.0
                                 }
                         ))
             # else:
@@ -302,10 +325,12 @@ class FileLoader(object):
                 id = int(node_list_str[id_idx][1:])
                 id_list = id-1
                 feature = feas_y[id_list][1]
-                fx = float(node_list_str[feat_list.index('FLUX')])
-                fy = float(node_list_str[feat_list.index('FLUY')])
-                fz = float(node_list_str[feat_list.index('FLUZ')])
-                feature["fluxn"] = np.sqrt(np.sum(np.power(np.array([fx,fy,fz]),2)))
+                temp = float(node_list_str[feat_list.index('TEMP')])
+                feature["temp"] = temp
+                # fx = float(node_list_str[feat_list.index('TEMP')])
+                # fy = float(node_list_str[feat_list.index('FLUY')])
+                # fz = float(node_list_str[feat_list.index('FLUZ')])
+                # feature["temp"] = np.sqrt(np.sum(np.power(np.array([fx,fy,fz]),2)))
 
         return feas_x, feas_y
 
